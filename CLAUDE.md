@@ -3,6 +3,9 @@
 ## Project
 Laputa App is a personal knowledge and life management desktop app, built with Tauri v2 + React + TypeScript + CodeMirror 6. It reads a vault of markdown files with YAML frontmatter and presents them in a four-panel UI inspired by Bear Notes.
 
+**Full project spec** (ontology, UI design, milestones): `~/OpenClaw/projects/laputa-app.md`
+**UI wireframes**: `~/OpenClaw/Laputa-app-design.pen`
+
 ## Tech Stack
 - **Desktop shell**: Tauri v2 (Rust backend)
 - **Frontend**: React 18+ with TypeScript
@@ -14,9 +17,13 @@ Laputa App is a personal knowledge and life management desktop app, built with T
 ## Architecture
 - `src-tauri/` — Rust backend (file I/O, frontmatter parsing, git ops, filesystem watching)
 - `src/` — React frontend
+- `src/mock-tauri.ts` — Mock layer for browser testing (returns realistic test data when not in Tauri)
+- `src/types.ts` — Shared TypeScript types (VaultEntry, etc.)
+- `e2e/` — Playwright E2E tests and screenshot verification
 - Vault path is configurable (not hardcoded) — the app works with "a vault at some path"
 - All data lives in markdown files with YAML frontmatter, git-versioned
 - The app reads/writes these files directly — no database
+- **Luca's vault**: `~/Laputa/` (~9200 markdown files)
 
 ## Coding Standards
 - Rust: use `serde` for serialization, `gray_matter` or similar for frontmatter parsing
