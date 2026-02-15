@@ -29,7 +29,6 @@
   color: var(--text-faint);
 }
 
-/* Drag strip for frameless window (shown when no tabs are open) */
 .editor__drag-strip {
   height: 48px;
   flex-shrink: 0;
@@ -108,14 +107,22 @@
   color: var(--text-primary);
 }
 
-/* CodeMirror container */
-.editor__cm-container {
+/* BlockNote container */
+.editor__blocknote-container {
   flex: 1;
   overflow: auto;
 }
 
-.editor__cm-container .cm-editor {
+.editor__blocknote-container .bn-container {
   height: 100%;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 15px;
+}
+
+.editor__blocknote-container .bn-editor {
+  padding: 20px 40px;
+  max-width: 760px;
 }
 
 /* Tab bar actions (diff toggle) */
@@ -156,7 +163,7 @@
   cursor: default;
 }
 
-/* Diff view container */
+/* Diff view */
 .editor__diff-container {
   flex: 1;
   overflow: auto;

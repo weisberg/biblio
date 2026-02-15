@@ -1,20 +1,7 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
-import { EditorState } from '@codemirror/state'
-import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter } from '@codemirror/view'
-import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
-import { markdown } from '@codemirror/lang-markdown'
-import { syntaxHighlighting, defaultHighlightStyle, bracketMatching } from '@codemirror/language'
-import {
-  livePreviewPlugin,
-  markdownStylePlugin,
-  editorTheme as libraryEditorTheme,
-  mouseSelectingField,
-  collapseOnSelectionFacet,
-  setMouseSelecting,
-  linkPlugin,
-  codeBlockField,
-} from 'codemirror-live-markdown'
-import { frontmatterHide, findFrontmatter } from './frontmatterHide'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
+import { useCreateBlockNote } from '@blocknote/react'
+import { BlockNoteView } from '@blocknote/mantine'
+import '@blocknote/mantine/style.css'
 import type { VaultEntry } from '../types'
 import './Editor.css'
 
@@ -33,75 +20,15 @@ interface EditorProps {
   isModified?: (path: string) => boolean
 }
 
-/** Theme overrides — maps the library's colors to our CSS variables for light/dark support */
-const editorThemeOverrides = EditorView.theme({
-  '&': {
-    fontSize: '15px',
-    backgroundColor: 'var(--bg-primary)',
-    color: 'var(--text-primary)',
-  },
-  '.cm-scroller': {
-    padding: '20px 0',
-  },
-  '.cm-content': {
-    padding: '0 40px',
-    maxWidth: '760px',
-    caretColor: 'var(--text-primary)',
-  },
-  '.cm-gutters': {
-    background: 'var(--bg-primary)',
-    border: 'none',
-    color: 'var(--text-faint)',
-  },
-  '.cm-activeLineGutter': {
-    background: 'var(--bg-hover-subtle)',
-  },
-  '.cm-activeLine': {
-    background: 'rgba(128, 128, 128, 0.06)',
-  },
-  '.cm-cursor': {
-    borderLeftColor: 'var(--text-primary)',
-    borderLeftWidth: '1.5px',
-  },
-  '.cm-selectionBackground': {
-    background: 'var(--bg-selected) !important',
-  },
-  '&.cm-focused .cm-selectionBackground': {
-    background: 'var(--bg-selected) !important',
-  },
-  // Override library heading/inline colors to use our CSS variables
-  '.cm-header-1, .cm-header-2, .cm-header-3, .cm-header-4, .cm-header-5, .cm-header-6': {
-    color: 'var(--text-heading)',
-  },
-  '.cm-strong': {
-    color: 'var(--text-primary)',
-  },
-  '.cm-emphasis': {
-    color: 'var(--text-primary)',
-  },
-  '.cm-strikethrough': {
-    color: 'var(--text-tertiary)',
-  },
-  '.cm-code': {
-    backgroundColor: 'var(--bg-hover-subtle)',
-    fontFamily: '"SF Mono", "Fira Code", "Cascadia Code", monospace',
-    fontSize: '0.9em',
-  },
-  '.cm-link': {
-    color: 'var(--accent-blue)',
-  },
-  '.cm-wikilink': {
-    color: 'var(--accent-blue)',
-    borderBottom: '1px dotted var(--accent-blue)',
-    textDecoration: 'none',
-  },
-  '.cm-formatting-inline': {
-    color: 'var(--text-faint)',
-  },
-  '.cm-formatting-block': {
-    color: 'var(--text-faint)',
-  },
-})
+/** Strip YAML frontmatter from markdown, returning [frontmatter, body] */
+function splitFrontmatter(content: string): [string, string] {
+  if (!content.startsWith('---')) return ['', content]
+  const end = content.indexOf('\n---', 3)
+  if (end === -1) return ['', content]
+  let to = end + 4
+  if (content[to] === '\n') to++
+  return [content.slice(0, to), content.slice(to)]
+}
 
 function DiffView({ diff }: { diff: string }) {
   if (!diff) {
@@ -139,12 +66,56 @@ function DiffView({ diff }: { diff: string }) {
   )
 }
 
-export function Editor({ tabs, activeTabPath, onSwitchTab, onCloseTab, onNavigateWikilink, onLoadDiff, isModified }: EditorProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const viewRef = useRef<EditorView | null>(null)
+/** Inner component that creates/manages BlockNote for a single tab */
+function BlockNoteTab({ content, onNavigateWikilink }: { content: string; onNavigateWikilink: (target: string) => void }) {
+  const [, body] = useMemo(() => splitFrontmatter(content), [content])
   const navigateRef = useRef(onNavigateWikilink)
   navigateRef.current = onNavigateWikilink
 
+  const editor = useCreateBlockNote({})
+
+  // Load markdown content into editor
+  useEffect(() => {
+    async function load() {
+      const blocks = await editor.tryParseMarkdownToBlocks(body)
+      editor.replaceBlocks(editor.document, blocks)
+    }
+    load()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [body])
+
+  // Intercept link clicks for wikilinks
+  useEffect(() => {
+    const container = document.querySelector('.bn-container')
+    if (!container) return
+    const handler = (e: Event) => {
+      const target = (e as MouseEvent).target as HTMLElement
+      const link = target.closest('a')
+      if (!link) return
+      const href = link.getAttribute('href') || ''
+      if (href && !href.startsWith('http://') && !href.startsWith('https://')) {
+        e.preventDefault()
+        e.stopPropagation()
+        navigateRef.current(href)
+      }
+    }
+    container.addEventListener('click', handler, true)
+    return () => container.removeEventListener('click', handler, true)
+  }, [editor])
+
+  const isDark = typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') !== 'light'
+
+  return (
+    <div className="editor__blocknote-container">
+      <BlockNoteView
+        editor={editor}
+        theme={isDark ? 'dark' : 'light'}
+      />
+    </div>
+  )
+}
+
+export function Editor({ tabs, activeTabPath, onSwitchTab, onCloseTab, onNavigateWikilink, onLoadDiff, isModified }: EditorProps) {
   const [diffMode, setDiffMode] = useState(false)
   const [diffContent, setDiffContent] = useState<string | null>(null)
   const [diffLoading, setDiffLoading] = useState(false)
@@ -152,7 +123,6 @@ export function Editor({ tabs, activeTabPath, onSwitchTab, onCloseTab, onNavigat
   const activeTab = tabs.find((t) => t.entry.path === activeTabPath) ?? null
   const showDiffToggle = activeTab && isModified?.(activeTab.entry.path)
 
-  // Reset diff mode when switching tabs
   useEffect(() => {
     setDiffMode(false)
     setDiffContent(null)
@@ -176,78 +146,6 @@ export function Editor({ tabs, activeTabPath, onSwitchTab, onCloseTab, onNavigat
       setDiffLoading(false)
     }
   }, [diffMode, activeTabPath, onLoadDiff])
-
-  // Create/destroy editor view when active tab changes
-  useEffect(() => {
-    if (!containerRef.current || !activeTab || diffMode) return
-
-    // If view already exists for this tab, skip
-    if (viewRef.current) {
-      viewRef.current.destroy()
-      viewRef.current = null
-    }
-
-    // Place cursor after frontmatter so it starts hidden
-    const fmRange = findFrontmatter(activeTab.content)
-    const initialCursor = fmRange ? fmRange[1] : 0
-
-    const state = EditorState.create({
-      doc: activeTab.content,
-      selection: { anchor: initialCursor },
-      extensions: [
-        lineNumbers(),
-        highlightActiveLine(),
-        highlightActiveLineGutter(),
-        history(),
-        bracketMatching(),
-        markdown(),
-        syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
-        // codemirror-live-markdown extensions
-        collapseOnSelectionFacet.of(true),
-        mouseSelectingField,
-        livePreviewPlugin,
-        markdownStylePlugin,
-        libraryEditorTheme,
-        editorThemeOverrides,
-        linkPlugin({
-          onWikiLinkClick: (target) => navigateRef.current(target),
-        }),
-        codeBlockField({ copyButton: true }),
-        frontmatterHide(),
-        keymap.of([...defaultKeymap, ...historyKeymap]),
-        EditorView.lineWrapping,
-      ],
-    })
-
-    const view = new EditorView({
-      state,
-      parent: containerRef.current,
-    })
-
-    // Mouse selection tracking for codemirror-live-markdown
-    let destroyed = false
-    view.contentDOM.addEventListener('mousedown', () => {
-      view.dispatch({ effects: setMouseSelecting.of(true) })
-    })
-    const handleMouseUp = () => {
-      requestAnimationFrame(() => {
-        if (!destroyed) {
-          view.dispatch({ effects: setMouseSelecting.of(false) })
-        }
-      })
-    }
-    document.addEventListener('mouseup', handleMouseUp)
-
-    viewRef.current = view
-
-    return () => {
-      destroyed = true
-      document.removeEventListener('mouseup', handleMouseUp)
-      view.destroy()
-      viewRef.current = null
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTabPath, activeTab?.content, diffMode])
 
   if (tabs.length === 0) {
     return (
@@ -300,7 +198,13 @@ export function Editor({ tabs, activeTabPath, onSwitchTab, onCloseTab, onNavigat
           <DiffView diff={diffContent ?? ''} />
         </div>
       ) : (
-        <div className="editor__cm-container" ref={containerRef} />
+        activeTab && (
+          <BlockNoteTab
+            key={activeTabPath}
+            content={activeTab.content}
+            onNavigateWikilink={onNavigateWikilink}
+          />
+        )
       )}
     </div>
   )
