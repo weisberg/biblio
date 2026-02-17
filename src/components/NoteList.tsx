@@ -293,16 +293,23 @@ function NoteListInner({ entries, selection, selectedNote, modifiedFiles, onSele
           }).map(({ label, type }) => {
             const count = typeCounts.get(type) ?? 0
             const isActive = typeFilter === type
+            const pillColor = type ? getTypeColor(type) : 'var(--accent-blue)'
+            const pillLightColor = type ? getTypeLightColor(type) : 'var(--accent-blue-light)'
             return (
               <button
                 key={label}
                 className={cn(
                   "note-list__pill whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[11px] uppercase transition-colors",
-                  isActive
-                    ? "border-[var(--primary)] bg-[#155DFF18] text-[var(--primary)]"
-                    : "border-[var(--border)] bg-transparent text-muted-foreground hover:bg-secondary"
+                  !isActive && "border-[var(--border)] bg-transparent text-muted-foreground hover:bg-secondary"
                 )}
-                style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+                style={{
+                  fontFamily: "'IBM Plex Mono', monospace",
+                  ...(isActive && {
+                    borderColor: pillColor,
+                    backgroundColor: pillLightColor,
+                    color: pillColor,
+                  }),
+                }}
                 onClick={() => setTypeFilter(type)}
               >
                 {label} {count}
