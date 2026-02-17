@@ -1,9 +1,23 @@
-import { useState, useEffect } from 'react'
+import { useState, type ComponentType } from 'react'
 import type { VaultEntry, SidebarSelection } from '../types'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Sun, Moon, Plus, ChevronRight, ChevronDown, GitCommitHorizontal } from 'lucide-react'
+import { ChevronRight, ChevronDown, GitCommitHorizontal } from 'lucide-react'
+import {
+  MagnifyingGlass,
+  Gear,
+  FileText,
+  Star,
+  FolderOpen,
+  Flask,
+  Target,
+  ArrowsClockwise,
+  Users,
+  CalendarBlank,
+  Tag,
+  TagSimple,
+  Trash,
+  type IconProps,
+} from '@phosphor-icons/react'
 
 interface SidebarProps {
   entries: VaultEntry[]
@@ -14,49 +28,23 @@ interface SidebarProps {
   onCommitPush?: () => void
 }
 
-const FILTERS = [
-  { label: 'All Notes', filter: 'all' as const },
-  { label: 'People', filter: 'people' as const },
-  { label: 'Events', filter: 'events' as const },
-  { label: 'Changes', filter: 'changes' as const },
-  { label: 'Favorites', filter: 'favorites' as const },
-  { label: 'Trash', filter: 'trash' as const },
+const TOP_NAV = [
+  { label: 'All Notes', filter: 'all' as const, Icon: FileText },
+  { label: 'Favorites', filter: 'favorites' as const, Icon: Star },
 ]
 
-const SECTION_GROUPS = [
-  { label: 'PROJECTS', type: 'Project' },
-  { label: 'EXPERIMENTS', type: 'Experiment' },
-  { label: 'RESPONSIBILITIES', type: 'Responsibility' },
-  { label: 'PROCEDURES', type: 'Procedure' },
-] as const
+const SECTION_GROUPS: { label: string; type: string; Icon: ComponentType<IconProps> }[] = [
+  { label: 'Projects', type: 'Project', Icon: FolderOpen },
+  { label: 'Experiments', type: 'Experiment', Icon: Flask },
+  { label: 'Responsibilities', type: 'Responsibility', Icon: Target },
+  { label: 'Procedures', type: 'Procedure', Icon: ArrowsClockwise },
+  { label: 'People', type: 'Person', Icon: Users },
+  { label: 'Events', type: 'Event', Icon: CalendarBlank },
+  { label: 'Topics', type: 'Topic', Icon: Tag },
+]
 
 export function Sidebar({ entries, selection, onSelect, onSelectNote, modifiedCount = 0, onCommitPush }: SidebarProps) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    try {
-      return (localStorage.getItem('laputa-theme') as 'dark' | 'light') || 'dark'
-    } catch {
-      return 'dark'
-    }
-  })
-
-  useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
-    try {
-      localStorage.setItem('laputa-theme', theme)
-    } catch {
-      // localStorage unavailable
-    }
-  }, [theme])
-
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))
-  }
-
   const toggleSection = (type: string) => {
     setCollapsed((prev) => ({ ...prev, [type]: !prev[type] }))
   }
@@ -71,100 +59,141 @@ export function Sidebar({ entries, selection, onSelect, onSelectNote, modifiedCo
   }
 
   return (
-    <aside className="flex h-full flex-col overflow-y-auto bg-sidebar text-sidebar-foreground">
-      {/* Header */}
-      <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3 pl-[78px]" data-tauri-drag-region style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
-        <h2 className="m-0 text-[17px] font-bold tracking-tight text-foreground">Laputa</h2>
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          onClick={toggleTheme}
-          title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-          className="text-muted-foreground hover:text-foreground"
-          style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
-        >
-          {theme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}
-        </Button>
+    <aside className="flex h-full flex-col overflow-hidden bg-sidebar text-sidebar-foreground">
+      {/* Header — 45px, icons only, no title */}
+      <div
+        className="flex shrink-0 items-center justify-end border-b border-border"
+        style={{ height: 45, padding: '12px 16px 12px 78px', WebkitAppRegion: 'drag' } as React.CSSProperties}
+        data-tauri-drag-region
+      >
+        <div className="flex items-center gap-2" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+          <button
+            className="flex items-center justify-center border-none bg-transparent p-0 text-muted-foreground"
+            style={{ opacity: 0.4, cursor: 'not-allowed', pointerEvents: 'none' }}
+            title="Coming soon"
+            tabIndex={-1}
+          >
+            <MagnifyingGlass size={16} />
+          </button>
+          <button
+            className="flex items-center justify-center border-none bg-transparent p-0 text-muted-foreground"
+            style={{ opacity: 0.4, cursor: 'not-allowed', pointerEvents: 'none' }}
+            title="Coming soon"
+            tabIndex={-1}
+          >
+            <Gear size={16} />
+          </button>
+        </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-2">
-        {/* Filters */}
-        <div className="mb-2 border-b border-border py-1">
-          {FILTERS.map(({ label, filter }) => (
-            <div
-              key={filter}
-              className={cn(
-                "mx-1.5 my-px cursor-pointer rounded-md px-4 py-1.5 text-[13px] transition-colors",
-                isActive({ kind: 'filter', filter })
-                  ? "bg-primary/10 font-medium text-primary"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
-              )}
-              onClick={() => onSelect({ kind: 'filter', filter })}
-            >
-              <span className="flex items-center gap-1.5">
-                {label}
-                {filter === 'changes' && modifiedCount > 0 && (
-                  <Badge className="h-[18px] min-w-[18px] bg-[var(--accent-orange)] px-1 text-[10px] text-white">
-                    {modifiedCount}
-                  </Badge>
+      <nav className="flex-1 overflow-y-auto">
+        {/* Top nav — All Notes + Favorites */}
+        <div className="border-b border-border" style={{ padding: '4px 6px' }}>
+          {TOP_NAV.map(({ label, filter, Icon }) => {
+            const count = filter === 'all' ? entries.length : 0
+            return (
+              <div
+                key={filter}
+                className={cn(
+                  "flex cursor-pointer select-none items-center gap-2 rounded transition-colors",
+                  isActive({ kind: 'filter', filter })
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
                 )}
-              </span>
-            </div>
-          ))}
+                style={{ padding: '6px 16px', borderRadius: 4 }}
+                onClick={() => onSelect({ kind: 'filter', filter })}
+              >
+                <Icon size={16} />
+                <span className="flex-1 text-[13px] font-medium">{label}</span>
+                {count > 0 && (
+                  <span
+                    className="flex items-center justify-center bg-secondary text-muted-foreground"
+                    style={{ height: 20, borderRadius: 9999, padding: '0 6px', fontSize: 10 }}
+                  >
+                    {count}
+                  </span>
+                )}
+              </div>
+            )
+          })}
+          {/* Disabled placeholders */}
+          <div
+            className="flex select-none items-center gap-2 rounded text-muted-foreground"
+            style={{ padding: '6px 16px', borderRadius: 4, opacity: 0.4, cursor: 'not-allowed' }}
+            title="Coming soon"
+          >
+            <TagSimple size={16} />
+            <span className="flex-1 text-[13px] font-medium">Untagged</span>
+          </div>
+          <div
+            className="flex select-none items-center gap-2 rounded text-muted-foreground"
+            style={{ padding: '6px 16px', borderRadius: 4, opacity: 0.4, cursor: 'not-allowed' }}
+            title="Coming soon"
+          >
+            <Trash size={16} />
+            <span className="flex-1 text-[13px] font-medium">Trash</span>
+          </div>
         </div>
 
         {/* Section Groups */}
-        {SECTION_GROUPS.map(({ label, type }) => {
-          const items = entries.filter((e) => e.isA === type)
+        {SECTION_GROUPS.map(({ label, type, Icon }) => {
+          const items = type === 'Topic'
+            ? entries.filter((e) => e.isA === 'Topic')
+            : entries.filter((e) => e.isA === type)
           const isCollapsed = collapsed[type] ?? false
+          const isTopic = type === 'Topic'
 
           return (
-            <div key={type} className="mb-1">
+            <div key={type} style={{ padding: '4px 6px' }}>
+              {/* Section header row */}
               <div
                 className={cn(
-                  "mx-1 flex cursor-pointer select-none items-center rounded px-2 py-1.5 text-[11px] font-semibold tracking-wide",
+                  "flex cursor-pointer select-none items-center justify-between rounded transition-colors",
                   isActive({ kind: 'sectionGroup', type })
                     ? "bg-secondary text-foreground"
-                    : "text-muted-foreground hover:bg-secondary hover:text-secondary-foreground"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
                 )}
+                style={{ padding: '6px 16px', borderRadius: 4, gap: 8 }}
                 onClick={() => onSelect({ kind: 'sectionGroup', type })}
               >
-                <button
-                  className="mr-1 flex shrink-0 items-center bg-transparent border-none text-inherit cursor-pointer p-0"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    toggleSection(type)
-                  }}
-                  aria-label={isCollapsed ? `Expand ${label}` : `Collapse ${label}`}
+                <div className="flex items-center" style={{ gap: 8 }}>
+                  <button
+                    className="flex shrink-0 items-center border-none bg-transparent p-0 text-inherit cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      toggleSection(type)
+                    }}
+                    aria-label={isCollapsed ? `Expand ${label}` : `Collapse ${label}`}
+                  >
+                    {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                  </button>
+                  <Icon size={18} weight="bold" />
+                  <span className="text-[13px] font-semibold">{label}</span>
+                </div>
+                <span
+                  className="flex items-center justify-center bg-secondary text-muted-foreground"
+                  style={{ height: 20, borderRadius: 9999, padding: '0 6px', fontSize: 10 }}
                 >
-                  {isCollapsed ? <ChevronRight className="size-3" /> : <ChevronDown className="size-3" />}
-                </button>
-                <span className="flex-1">{label}</span>
-                <span className="text-[10px] text-muted-foreground mr-1">{items.length}</span>
-                <button
-                  className="flex items-center bg-transparent border-none text-muted-foreground cursor-pointer p-0 opacity-0 transition-opacity group-hover/section:opacity-100 hover:text-foreground"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                  }}
-                  aria-label={`Add ${type}`}
-                >
-                  <Plus className="size-3.5" />
-                </button>
+                  {items.length}
+                </span>
               </div>
-              {!isCollapsed && (
-                <div className="py-0.5">
+
+              {/* Children items */}
+              {!isCollapsed && items.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   {items.map((entry) => (
                     <div
                       key={entry.path}
                       className={cn(
-                        "mx-1.5 my-px cursor-pointer truncate rounded-md py-1.5 pl-7 pr-4 text-[13px] transition-colors",
-                        isActive({ kind: 'entity', entry })
-                          ? "bg-primary/10 font-medium text-primary"
+                        "cursor-pointer truncate rounded-md text-[13px] font-medium transition-colors",
+                        isActive(isTopic ? { kind: 'topic', entry } : { kind: 'entity', entry })
+                          ? "bg-primary/10 text-primary"
                           : "text-muted-foreground hover:bg-accent hover:text-foreground"
                       )}
+                      style={{ padding: '4px 16px 4px 52px' }}
                       onClick={() => {
-                        onSelect({ kind: 'entity', entry })
+                        onSelect(isTopic ? { kind: 'topic', entry } : { kind: 'entity', entry })
                         onSelectNote?.(entry)
                       }}
                     >
@@ -176,48 +205,27 @@ export function Sidebar({ entries, selection, onSelect, onSelectNote, modifiedCo
             </div>
           )
         })}
-
-        {/* Topics */}
-        {(() => {
-          const topics = entries.filter((e) => e.isA === 'Topic')
-          if (topics.length === 0) return null
-          return (
-            <div className="mt-2 border-t border-border pt-2">
-              <div className="px-4 py-1.5 text-[11px] font-semibold tracking-wide text-muted-foreground select-none">
-                TOPICS
-              </div>
-              {topics.map((entry) => (
-                <div
-                  key={entry.path}
-                  className={cn(
-                    "mx-1.5 my-px cursor-pointer truncate rounded-md py-1.5 pl-7 pr-4 text-[13px] transition-colors",
-                    isActive({ kind: 'topic', entry })
-                      ? "bg-primary/10 font-medium text-primary"
-                      : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                  )}
-                  onClick={() => {
-                    onSelect({ kind: 'topic', entry })
-                    onSelectNote?.(entry)
-                  }}
-                >
-                  {entry.title}
-                </div>
-              ))}
-            </div>
-          )
-        })()}
       </nav>
 
-      {/* Commit button */}
-      {modifiedCount > 0 && onCommitPush && (
-        <div className="shrink-0 border-t border-border p-3">
-          <Button className="w-full gap-1.5" size="sm" onClick={onCommitPush}>
-            <GitCommitHorizontal className="size-3.5" />
-            Commit & Push
-            <Badge className="ml-1 bg-white/25 text-white text-[10px] h-[18px] min-w-[18px] px-1">
-              {modifiedCount}
-            </Badge>
-          </Button>
+      {/* Commit button — always visible */}
+      {onCommitPush && (
+        <div className="shrink-0 border-t border-border" style={{ padding: 12 }}>
+          <button
+            className="flex w-full items-center justify-center bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+            style={{ borderRadius: 6, gap: 6, padding: '8px 16px', border: 'none', cursor: 'pointer' }}
+            onClick={onCommitPush}
+          >
+            <GitCommitHorizontal size={14} />
+            <span className="text-[13px] font-medium">Commit & Push</span>
+            {modifiedCount > 0 && (
+              <span
+                className="text-white font-semibold"
+                style={{ background: '#ffffff40', borderRadius: 9, padding: '0 6px', fontSize: 10 }}
+              >
+                {modifiedCount}
+              </span>
+            )}
+          </button>
         </div>
       )}
     </aside>

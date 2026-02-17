@@ -3,12 +3,13 @@ import { invoke } from '@tauri-apps/api/core'
 import { Sidebar } from './components/Sidebar'
 import { NoteList } from './components/NoteList'
 import { Editor } from './components/Editor'
-import { Inspector, type FrontmatterValue } from './components/Inspector'
+import { type FrontmatterValue } from './components/Inspector'
 import { ResizeHandle } from './components/ResizeHandle'
 import { CreateNoteDialog, type NoteType } from './components/CreateNoteDialog'
 import { QuickOpenPalette } from './components/QuickOpenPalette'
 import { Toast } from './components/Toast'
 import { CommitDialog } from './components/CommitDialog'
+import { StatusBar } from './components/StatusBar'
 import { isTauri, mockInvoke, addMockEntry, updateMockContent } from './mock-tauri'
 import type { VaultEntry, SidebarSelection, GitCommit, ModifiedFile } from './types'
 import './App.css'
@@ -531,46 +532,42 @@ function App() {
   }, [loadModifiedFiles])
 
   return (
-    <div className="app">
-      <div className="app__sidebar" style={{ width: sidebarWidth }}>
-        <Sidebar entries={entries} selection={selection} onSelect={setSelection} onSelectNote={handleSelectNote} modifiedCount={modifiedFiles.length} onCommitPush={() => setShowCommitDialog(true)} />
+    <div className="app-shell">
+      <div className="app">
+        <div className="app__sidebar" style={{ width: sidebarWidth }}>
+          <Sidebar entries={entries} selection={selection} onSelect={setSelection} onSelectNote={handleSelectNote} modifiedCount={modifiedFiles.length} onCommitPush={() => setShowCommitDialog(true)} />
+        </div>
+        <ResizeHandle onResize={handleSidebarResize} />
+        <div className="app__note-list" style={{ width: noteListWidth }}>
+          <NoteList entries={entries} selection={selection} selectedNote={activeTab?.entry ?? null} allContent={allContent} modifiedFiles={modifiedFiles} onSelectNote={handleSelectNote} onCreateNote={() => setShowCreateDialog(true)} />
+        </div>
+        <ResizeHandle onResize={handleNoteListResize} />
+        <div className="app__editor">
+          <Editor
+            tabs={tabs}
+            activeTabPath={activeTabPath}
+            entries={entries}
+            onSwitchTab={handleSwitchTab}
+            onCloseTab={handleCloseTab}
+            onNavigateWikilink={handleNavigateWikilink}
+            onLoadDiff={handleLoadDiff}
+            isModified={isFileModified}
+            onCreateNote={() => setShowCreateDialog(true)}
+            inspectorCollapsed={inspectorCollapsed}
+            onToggleInspector={() => setInspectorCollapsed((c) => !c)}
+            inspectorWidth={inspectorWidth}
+            onInspectorResize={handleInspectorResize}
+            inspectorEntry={activeTab?.entry ?? null}
+            inspectorContent={activeTab?.content ?? null}
+            allContent={allContent}
+            gitHistory={gitHistory}
+            onUpdateFrontmatter={handleUpdateFrontmatter}
+            onDeleteProperty={handleDeleteProperty}
+            onAddProperty={handleAddProperty}
+          />
+        </div>
       </div>
-      <ResizeHandle onResize={handleSidebarResize} />
-      <div className="app__note-list" style={{ width: noteListWidth }}>
-        <NoteList entries={entries} selection={selection} selectedNote={activeTab?.entry ?? null} allContent={allContent} modifiedFiles={modifiedFiles} onSelectNote={handleSelectNote} onCreateNote={() => setShowCreateDialog(true)} />
-      </div>
-      <ResizeHandle onResize={handleNoteListResize} />
-      <div className="app__editor">
-        <Editor
-          tabs={tabs}
-          activeTabPath={activeTabPath}
-          entries={entries}
-          onSwitchTab={handleSwitchTab}
-          onCloseTab={handleCloseTab}
-          onNavigateWikilink={handleNavigateWikilink}
-          onLoadDiff={handleLoadDiff}
-          isModified={isFileModified}
-        />
-      </div>
-      {!inspectorCollapsed && <ResizeHandle onResize={handleInspectorResize} />}
-      <div
-        className="app__inspector"
-        style={{ width: inspectorCollapsed ? 40 : inspectorWidth }}
-      >
-        <Inspector
-          collapsed={inspectorCollapsed}
-          onToggle={() => setInspectorCollapsed((c) => !c)}
-          entry={activeTab?.entry ?? null}
-          content={activeTab?.content ?? null}
-          entries={entries}
-          allContent={allContent}
-          gitHistory={gitHistory}
-          onNavigate={handleNavigateWikilink}
-          onUpdateFrontmatter={handleUpdateFrontmatter}
-          onDeleteProperty={handleDeleteProperty}
-          onAddProperty={handleAddProperty}
-        />
-      </div>
+      <StatusBar />
       <Toast message={toastMessage} onDismiss={() => setToastMessage(null)} />
       <QuickOpenPalette
         open={showQuickOpen}

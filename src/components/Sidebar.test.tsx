@@ -94,6 +94,36 @@ const mockEntries: VaultEntry[] = [
     createdAt: null,
     fileSize: 180,
   },
+  {
+    path: '/vault/person/alice.md',
+    filename: 'alice.md',
+    title: 'Alice',
+    isA: 'Person',
+    aliases: [],
+    belongsTo: [],
+    relatedTo: [],
+    status: null,
+    owner: null,
+    cadence: null,
+    modifiedAt: 1700000000,
+    createdAt: null,
+    fileSize: 100,
+  },
+  {
+    path: '/vault/event/kickoff.md',
+    filename: 'kickoff.md',
+    title: 'Kickoff Meeting',
+    isA: 'Event',
+    aliases: [],
+    belongsTo: [],
+    relatedTo: [],
+    status: null,
+    owner: null,
+    cadence: null,
+    modifiedAt: 1700000000,
+    createdAt: null,
+    fileSize: 200,
+  },
 ]
 
 const defaultSelection: SidebarSelection = { kind: 'filter', filter: 'all' }
@@ -104,12 +134,21 @@ describe('Sidebar', () => {
     expect(screen.getByText('Laputa')).toBeInTheDocument()
   })
 
-  it('renders section group headers', () => {
+  it('renders top nav items (All Notes and Favorites)', () => {
+    render(<Sidebar entries={[]} selection={defaultSelection} onSelect={() => {}} />)
+    expect(screen.getByText('All Notes')).toBeInTheDocument()
+    expect(screen.getByText('Favorites')).toBeInTheDocument()
+  })
+
+  it('renders section group headers with new labels', () => {
     render(<Sidebar entries={mockEntries} selection={defaultSelection} onSelect={() => {}} />)
-    expect(screen.getByText('PROJECTS')).toBeInTheDocument()
-    expect(screen.getByText('EXPERIMENTS')).toBeInTheDocument()
-    expect(screen.getByText('RESPONSIBILITIES')).toBeInTheDocument()
-    expect(screen.getByText('PROCEDURES')).toBeInTheDocument()
+    expect(screen.getByText('Projects')).toBeInTheDocument()
+    expect(screen.getByText('Experiments')).toBeInTheDocument()
+    expect(screen.getByText('Responsibilities')).toBeInTheDocument()
+    expect(screen.getByText('Procedures')).toBeInTheDocument()
+    expect(screen.getByText('People')).toBeInTheDocument()
+    expect(screen.getByText('Events')).toBeInTheDocument()
+    expect(screen.getByText('Topics')).toBeInTheDocument()
   })
 
   it('shows entity names under their section groups', () => {
@@ -120,23 +159,20 @@ describe('Sidebar', () => {
     expect(screen.getByText('Write Weekly Essays')).toBeInTheDocument()
   })
 
-  it('shows correct counts per section', () => {
+  it('shows People and Events as section groups', () => {
     render(<Sidebar entries={mockEntries} selection={defaultSelection} onSelect={() => {}} />)
-    // Each section has exactly 1 item
-    const counts = screen.getAllByText('1')
-    expect(counts.length).toBe(4)
+    expect(screen.getByText('Alice')).toBeInTheDocument()
+    expect(screen.getByText('Kickoff Meeting')).toBeInTheDocument()
   })
 
   it('collapses and expands sections', () => {
     render(<Sidebar entries={mockEntries} selection={defaultSelection} onSelect={() => {}} />)
     expect(screen.getByText('Build Laputa App')).toBeInTheDocument()
 
-    // Collapse PROJECTS section
-    fireEvent.click(screen.getByLabelText('Collapse PROJECTS'))
+    fireEvent.click(screen.getByLabelText('Collapse Projects'))
     expect(screen.queryByText('Build Laputa App')).not.toBeInTheDocument()
 
-    // Expand PROJECTS section
-    fireEvent.click(screen.getByLabelText('Expand PROJECTS'))
+    fireEvent.click(screen.getByLabelText('Expand Projects'))
     expect(screen.getByText('Build Laputa App')).toBeInTheDocument()
   })
 
@@ -153,41 +189,26 @@ describe('Sidebar', () => {
   it('calls onSelect when clicking a section header', () => {
     const onSelect = vi.fn()
     render(<Sidebar entries={mockEntries} selection={defaultSelection} onSelect={onSelect} />)
-    fireEvent.click(screen.getByText('PROJECTS'))
+    fireEvent.click(screen.getByText('Projects'))
     expect(onSelect).toHaveBeenCalledWith({
       kind: 'sectionGroup',
       type: 'Project',
     })
   })
 
-  it('renders filter items', () => {
-    render(<Sidebar entries={[]} selection={defaultSelection} onSelect={() => {}} />)
-    expect(screen.getByText('All Notes')).toBeInTheDocument()
-    expect(screen.getByText('People')).toBeInTheDocument()
-    expect(screen.getByText('Events')).toBeInTheDocument()
-    expect(screen.getByText('Favorites')).toBeInTheDocument()
-    expect(screen.getByText('Trash')).toBeInTheDocument()
-  })
-
-  it('highlights active filter', () => {
-    render(<Sidebar entries={[]} selection={defaultSelection} onSelect={() => {}} />)
-    const allNotes = screen.getByText('All Notes')
-    expect(allNotes.className).toContain('sidebar__filter-item--active')
-  })
-
-  it('calls onSelect when clicking a filter', () => {
+  it('calls onSelect with sectionGroup for People', () => {
     const onSelect = vi.fn()
-    render(<Sidebar entries={[]} selection={defaultSelection} onSelect={onSelect} />)
+    render(<Sidebar entries={mockEntries} selection={defaultSelection} onSelect={onSelect} />)
     fireEvent.click(screen.getByText('People'))
     expect(onSelect).toHaveBeenCalledWith({
-      kind: 'filter',
-      filter: 'people',
+      kind: 'sectionGroup',
+      type: 'Person',
     })
   })
 
-  it('renders TOPICS section with topic entries', () => {
+  it('renders Topics section with topic entries', () => {
     render(<Sidebar entries={mockEntries} selection={defaultSelection} onSelect={() => {}} />)
-    expect(screen.getByText('TOPICS')).toBeInTheDocument()
+    expect(screen.getByText('Topics')).toBeInTheDocument()
     expect(screen.getByText('Software Development')).toBeInTheDocument()
     expect(screen.getByText('Trading')).toBeInTheDocument()
   })
@@ -202,16 +223,18 @@ describe('Sidebar', () => {
     })
   })
 
-  it('highlights active topic', () => {
-    const topicSelection: SidebarSelection = { kind: 'topic', entry: mockEntries[4] }
-    render(<Sidebar entries={mockEntries} selection={topicSelection} onSelect={() => {}} />)
-    const topicEl = screen.getByText('Software Development')
-    expect(topicEl.className).toContain('sidebar__topic-item--active')
+  it('renders search bar placeholder', () => {
+    render(<Sidebar entries={[]} selection={defaultSelection} onSelect={() => {}} />)
+    expect(screen.getByPlaceholderText('Search notes...')).toBeInTheDocument()
   })
 
-  it('does not render TOPICS section when no topics exist', () => {
-    const noTopics = mockEntries.filter((e) => e.isA !== 'Topic')
-    render(<Sidebar entries={noTopics} selection={defaultSelection} onSelect={() => {}} />)
-    expect(screen.queryByText('TOPICS')).not.toBeInTheDocument()
+  it('renders commit button even when no modified files', () => {
+    render(<Sidebar entries={[]} selection={defaultSelection} onSelect={() => {}} onCommitPush={() => {}} />)
+    expect(screen.getByText('Commit & Push')).toBeInTheDocument()
+  })
+
+  it('shows badge on commit button when modified files exist', () => {
+    render(<Sidebar entries={[]} selection={defaultSelection} onSelect={() => {}} modifiedCount={3} onCommitPush={() => {}} />)
+    expect(screen.getByText('3')).toBeInTheDocument()
   })
 })

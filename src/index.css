@@ -1,12 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
-
 /* ============================================================
-   Theme Variables
-   shadcn CSS variables + app-specific variables for both modes.
-   Dark mode is default (html.dark), light mode = no .dark class.
+   Theme Variables — Light mode only (dark mode removed for now)
    ============================================================ */
 
 :root {
@@ -29,7 +25,7 @@
   --card-foreground: #37352F;
   --popover: #FFFFFF;
   --popover-foreground: #37352F;
-  --primary: #2383E2;
+  --primary: #155DFF;
   --primary-foreground: #FFFFFF;
   --secondary: #EBEBEA;
   --secondary-foreground: #37352F;
@@ -41,15 +37,15 @@
   --destructive-foreground: #FFFFFF;
   --border: #E9E9E7;
   --input: #E9E9E7;
-  --ring: #2383E2;
+  --ring: #155DFF;
   --sidebar: #F7F6F3;
   --sidebar-foreground: #37352F;
-  --sidebar-primary: #2383E2;
+  --sidebar-primary: #155DFF;
   --sidebar-primary-foreground: #FFFFFF;
   --sidebar-accent: #EBEBEA;
   --sidebar-accent-foreground: #37352F;
   --sidebar-border: #E9E9E7;
-  --sidebar-ring: #2383E2;
+  --sidebar-ring: #155DFF;
 
   /* --- App-specific variables (light mode) --- */
   color-scheme: light;
@@ -68,86 +64,30 @@
   --text-muted: #B4B4B4;
   --text-faint: #B4B4B4;
   --text-heading: #37352F;
-  --accent-blue: #2383E2;
-  --accent-blue-bg: #2383E218;
-  --accent-blue-hover: #1a6bb5;
-  --accent-green: #0F7B6C;
+  --accent-blue: #155DFF;
+  --accent-blue-bg: #155DFF18;
+  --accent-blue-hover: #0D4AD6;
+  --accent-green: #00B38B;
   --accent-orange: #D9730D;
   --accent-red: #E03E3E;
-  --accent-purple: #9065B0;
+  --accent-purple: #A932FF;
+  --accent-yellow: #F0B100;
+  --accent-blue-light: #155DFF14;
+  --accent-green-light: #00B38B14;
+  --accent-purple-light: #A932FF14;
+  --accent-red-light: #E03E3E14;
+  --accent-yellow-light: #F0B10014;
   --border-primary: #E9E9E7;
   --border-subtle: #E9E9E7;
   --border-input: #E9E9E7;
   --border-dialog: #E9E9E7;
-  --link-color: #2383E2;
-  --link-hover: #1a6bb5;
+  --link-color: #155DFF;
+  --link-hover: #0D4AD6;
   --shadow-overlay: rgba(0, 0, 0, 0.3);
   --shadow-dialog: rgba(0, 0, 0, 0.15);
 }
 
-.dark {
-  /* --- shadcn theme variables (dark mode) --- */
-  --background: #0f0f1a;
-  --foreground: #e0e0e0;
-  --card: #16162a;
-  --card-foreground: #e0e0e0;
-  --popover: #1e1e3a;
-  --popover-foreground: #e0e0e0;
-  --primary: #4a9eff;
-  --primary-foreground: #ffffff;
-  --secondary: #2a2a4a;
-  --secondary-foreground: #e0e0e0;
-  --muted: #1e1e3a;
-  --muted-foreground: #888;
-  --accent: #252545;
-  --accent-foreground: #ffffff;
-  --destructive: #f44336;
-  --destructive-foreground: #ffffff;
-  --border: #2a2a4a;
-  --input: #2a2a4a;
-  --ring: #4a9eff;
-  --sidebar: #1a1a2e;
-  --sidebar-foreground: #e0e0e0;
-  --sidebar-primary: #4a9eff;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #252545;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #2a2a4a;
-  --sidebar-ring: #4a9eff;
-
-  /* --- App-specific variables (dark mode) --- */
-  color-scheme: dark;
-  --bg-primary: #0f0f1a;
-  --bg-sidebar: #1a1a2e;
-  --bg-card: #16162a;
-  --bg-hover: #252545;
-  --bg-hover-subtle: #1e1e3a;
-  --bg-selected: #24244a;
-  --bg-input: #1e1e3a;
-  --bg-button: #2a2a4a;
-  --bg-dialog: #1e1e3a;
-  --text-primary: #e0e0e0;
-  --text-secondary: #aaa;
-  --text-tertiary: #888;
-  --text-muted: #666;
-  --text-faint: #555;
-  --text-heading: #ffffff;
-  --accent-blue: #4a9eff;
-  --accent-blue-bg: #4a9eff18;
-  --accent-blue-hover: #3a8eef;
-  --accent-green: #4caf50;
-  --accent-orange: #ff9800;
-  --accent-red: #f44336;
-  --accent-purple: #9c72ff;
-  --border-primary: #2a2a4a;
-  --border-subtle: rgba(42, 42, 74, 0.5);
-  --border-input: #2a2a4a;
-  --border-dialog: #4a4a6a;
-  --link-color: #7eb8da;
-  --link-hover: #a8d8f0;
-  --shadow-overlay: rgba(0, 0, 0, 0.6);
-  --shadow-dialog: rgba(0, 0, 0, 0.5);
-}
+/* Dark mode variables removed — light mode only for now */
 
 /* --- Tailwind v4 theme inline: register colors + radii --- */
 @theme inline {

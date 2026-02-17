@@ -86,37 +86,33 @@ const mockEntries: VaultEntry[] = [
 
 describe('NoteList', () => {
   it('shows empty state when no entries', () => {
-    const { container } = render(<NoteList entries={[]} selection={allSelection} selectedNote={null} onSelectNote={noopSelect} allContent={{}} onCreateNote={vi.fn()} />)
+    render(<NoteList entries={[]} selection={allSelection} selectedNote={null} onSelectNote={noopSelect} allContent={{}} onCreateNote={vi.fn()} />)
     expect(screen.getByText('No notes found')).toBeInTheDocument()
-    expect(container.querySelector('.note-list__count')!.textContent).toBe('0')
   })
 
   it('renders all entries with All Notes filter', () => {
-    const { container } = render(<NoteList entries={mockEntries} selection={allSelection} selectedNote={null} onSelectNote={noopSelect} allContent={{}} onCreateNote={vi.fn()} />)
+    render(<NoteList entries={mockEntries} selection={allSelection} selectedNote={null} onSelectNote={noopSelect} allContent={{}} onCreateNote={vi.fn()} />)
     expect(screen.getByText('Build Laputa App')).toBeInTheDocument()
     expect(screen.getByText('Facebook Ads Strategy')).toBeInTheDocument()
     expect(screen.getByText('Matteo Cellini')).toBeInTheDocument()
-    expect(container.querySelector('.note-list__count')!.textContent).toBe('5')
   })
 
-  it('filters by People', () => {
-    const { container } = render(<NoteList entries={mockEntries} selection={{ kind: 'filter', filter: 'people' }} selectedNote={null} onSelectNote={noopSelect} allContent={{}} onCreateNote={vi.fn()} />)
+  it('filters by People (section group)', () => {
+    render(<NoteList entries={mockEntries} selection={{ kind: 'sectionGroup', type: 'Person' }} selectedNote={null} onSelectNote={noopSelect} allContent={{}} onCreateNote={vi.fn()} />)
     expect(screen.getByText('Matteo Cellini')).toBeInTheDocument()
     expect(screen.queryByText('Build Laputa App')).not.toBeInTheDocument()
-    expect(container.querySelector('.note-list__count')!.textContent).toBe('1')
   })
 
-  it('filters by Events', () => {
-    render(<NoteList entries={mockEntries} selection={{ kind: 'filter', filter: 'events' }} selectedNote={null} onSelectNote={noopSelect} allContent={{}} onCreateNote={vi.fn()} />)
+  it('filters by Events (section group)', () => {
+    render(<NoteList entries={mockEntries} selection={{ kind: 'sectionGroup', type: 'Event' }} selectedNote={null} onSelectNote={noopSelect} allContent={{}} onCreateNote={vi.fn()} />)
     expect(screen.getByText('Kickoff Meeting')).toBeInTheDocument()
     expect(screen.queryByText('Build Laputa App')).not.toBeInTheDocument()
   })
 
   it('filters by section group type', () => {
-    const { container } = render(<NoteList entries={mockEntries} selection={{ kind: 'sectionGroup', type: 'Project' }} selectedNote={null} onSelectNote={noopSelect} allContent={{}} onCreateNote={vi.fn()} />)
+    render(<NoteList entries={mockEntries} selection={{ kind: 'sectionGroup', type: 'Project' }} selectedNote={null} onSelectNote={noopSelect} allContent={{}} onCreateNote={vi.fn()} />)
     expect(screen.getByText('Build Laputa App')).toBeInTheDocument()
     expect(screen.queryByText('Matteo Cellini')).not.toBeInTheDocument()
-    expect(container.querySelector('.note-list__count')!.textContent).toBe('1')
   })
 
   it('shows entity pinned at top with grouped children', () => {
@@ -132,8 +128,6 @@ describe('NoteList', () => {
     // Group headers shown
     expect(screen.getByText('Children')).toBeInTheDocument()
     expect(screen.getByText('Related To')).toBeInTheDocument()
-    // Count shows grouped items (1 child + 1 related)
-    expect(container.querySelector('.note-list__count')!.textContent).toBe('2')
     // Type pills hidden in entity view
     expect(container.querySelector('.note-list__pills')).toBeNull()
   })
@@ -147,18 +141,23 @@ describe('NoteList', () => {
     expect(screen.queryByText('Facebook Ads Strategy')).not.toBeInTheDocument()
   })
 
-  it('renders a search bar', () => {
+  it('shows search input when search icon is clicked', () => {
     render(<NoteList entries={mockEntries} selection={allSelection} selectedNote={null} onSelectNote={noopSelect} allContent={{}} onCreateNote={vi.fn()} />)
+    // Search is hidden by default
+    expect(screen.queryByPlaceholderText('Search notes...')).not.toBeInTheDocument()
+    // Click search icon to show it
+    fireEvent.click(screen.getByTitle('Search notes'))
     expect(screen.getByPlaceholderText('Search notes...')).toBeInTheDocument()
   })
 
   it('filters by search query (case-insensitive substring)', () => {
-    const { container } = render(<NoteList entries={mockEntries} selection={allSelection} selectedNote={null} onSelectNote={noopSelect} allContent={{}} onCreateNote={vi.fn()} />)
+    render(<NoteList entries={mockEntries} selection={allSelection} selectedNote={null} onSelectNote={noopSelect} allContent={{}} onCreateNote={vi.fn()} />)
+    // Open search
+    fireEvent.click(screen.getByTitle('Search notes'))
     const input = screen.getByPlaceholderText('Search notes...')
     fireEvent.change(input, { target: { value: 'facebook' } })
     expect(screen.getByText('Facebook Ads Strategy')).toBeInTheDocument()
     expect(screen.queryByText('Build Laputa App')).not.toBeInTheDocument()
-    expect(container.querySelector('.note-list__count')!.textContent).toBe('1')
   })
 
   it('sorts entries by last modified descending', () => {
@@ -177,6 +176,7 @@ describe('NoteList', () => {
     const { container } = render(<NoteList entries={mockEntries} selection={allSelection} selectedNote={null} onSelectNote={noopSelect} allContent={{}} onCreateNote={vi.fn()} />)
     const pills = container.querySelectorAll('.note-list__pill')
     const labels = Array.from(pills).map((p) => p.textContent)
+    // Pills show label + count (CSS uppercase applies visually but not in textContent)
     expect(labels).toContain('All 5')
     expect(labels).toContain('Projects 1')
     expect(labels).toContain('Notes 1')
@@ -186,6 +186,10 @@ describe('NoteList', () => {
     expect(labels.some((l) => l?.startsWith('Experiments'))).toBe(false)
     expect(labels.some((l) => l?.startsWith('Procedures'))).toBe(false)
     expect(labels.some((l) => l?.startsWith('Responsibilities'))).toBe(false)
+    // Verify pills have IBM Plex Mono font and uppercase class
+    const firstPill = pills[0] as HTMLElement
+    expect(firstPill.style.fontFamily).toContain('IBM Plex Mono')
+    expect(firstPill.className).toContain('uppercase')
   })
 
   it('filters by type pill', () => {
@@ -205,5 +209,18 @@ describe('NoteList', () => {
     const allPill = Array.from(container.querySelectorAll('.note-list__pill')).find((p) => p.textContent?.startsWith('All'))!
     fireEvent.click(allPill)
     expect(screen.getByText('Build Laputa App')).toBeInTheDocument()
+  })
+
+  it('does not render type badge or status on note items', () => {
+    render(<NoteList entries={mockEntries} selection={allSelection} selectedNote={null} onSelectNote={noopSelect} allContent={{}} onCreateNote={vi.fn()} />)
+    // Type badges like "Project", "Note" etc. should not appear as separate badge elements
+    // The word "Project" should only appear in the ALL CAPS pill "PROJECTS 1", not as a standalone badge
+    expect(screen.queryByText('Active')).not.toBeInTheDocument()
+  })
+
+  it('header shows search and plus icons instead of count badge', () => {
+    render(<NoteList entries={mockEntries} selection={allSelection} selectedNote={null} onSelectNote={noopSelect} allContent={{}} onCreateNote={vi.fn()} />)
+    expect(screen.getByTitle('Search notes')).toBeInTheDocument()
+    expect(screen.getByTitle('Create new note')).toBeInTheDocument()
   })
 })

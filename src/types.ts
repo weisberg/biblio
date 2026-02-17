@@ -29,7 +29,7 @@ export interface ModifiedFile {
 }
 
 export type SidebarSelection =
-  | { kind: 'filter'; filter: 'all' | 'people' | 'events' | 'favorites' | 'trash' | 'changes' }
+  | { kind: 'filter'; filter: 'all' | 'favorites' }
   | { kind: 'sectionGroup'; type: string }
   | { kind: 'entity'; entry: VaultEntry }
   | { kind: 'topic'; entry: VaultEntry }

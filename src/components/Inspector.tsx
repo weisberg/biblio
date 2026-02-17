@@ -2,6 +2,7 @@ import { useMemo, useState, useCallback } from 'react'
 import type { VaultEntry, GitCommit } from '../types'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { SlidersHorizontal, X } from '@phosphor-icons/react'
 
 interface InspectorProps {
   collapsed: boolean
@@ -23,18 +24,20 @@ interface ParsedFrontmatter {
   [key: string]: FrontmatterValue
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  Active: '#4caf50',
-  Done: '#2196f3',
-  Paused: '#ff9800',
-  Archived: '#9e9e9e',
-  Dropped: '#f44336',
-  Open: '#4caf50',
-  Closed: '#9e9e9e',
-  'Not started': '#888',
-  Draft: '#ff9800',
-  Mixed: '#ff9800',
+const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
+  Active: { bg: 'var(--accent-green-light)', color: 'var(--accent-green)' },
+  Done: { bg: 'var(--accent-blue-light)', color: 'var(--accent-blue)' },
+  Paused: { bg: 'var(--accent-yellow-light)', color: 'var(--accent-yellow)' },
+  Archived: { bg: 'var(--accent-blue-light)', color: 'var(--muted-foreground)' },
+  Dropped: { bg: 'var(--accent-red-light)', color: 'var(--accent-red)' },
+  Open: { bg: 'var(--accent-green-light)', color: 'var(--accent-green)' },
+  Closed: { bg: 'var(--accent-blue-light)', color: 'var(--muted-foreground)' },
+  'Not started': { bg: 'var(--accent-blue-light)', color: 'var(--muted-foreground)' },
+  Draft: { bg: 'var(--accent-yellow-light)', color: 'var(--accent-yellow)' },
+  Mixed: { bg: 'var(--accent-yellow-light)', color: 'var(--accent-yellow)' },
 }
+
+const DEFAULT_STATUS_STYLE = { bg: 'var(--accent-blue-light)', color: 'var(--muted-foreground)' }
 
 // Keys that are relationships (contain wikilinks)
 const RELATIONSHIP_KEYS = new Set([
@@ -354,12 +357,19 @@ function RelationshipGroup({ label, refs, onNavigate }: { label: string; refs: s
   if (refs.length === 0) return null
   return (
     <div className="mb-2.5">
-      <span className="mb-1 block text-[11px] text-muted-foreground">{label}</span>
+      <span className="mb-1 block text-xs font-semibold text-foreground">{label}</span>
       <div className="flex flex-col gap-1">
         {refs.map((ref, idx) => (
           <button
             key={`${ref}-${idx}`}
-            className="border-none bg-transparent p-0 py-0.5 text-left text-[13px] text-primary cursor-pointer hover:underline"
+            className="border-none text-left text-primary cursor-pointer hover:opacity-80"
+            style={{
+              background: 'var(--accent-blue-light)',
+              borderRadius: 6,
+              padding: '6px 10px',
+              fontSize: 12,
+              fontWeight: 500,
+            }}
             onClick={() => onNavigate(wikilinkTarget(ref))}
           >
             {wikilinkDisplay(ref)}
@@ -416,6 +426,14 @@ function DynamicRelationshipsPanel({
       {relationshipEntries.map(({ key, refs }) => (
         <RelationshipGroup key={key} label={key} refs={refs} onNavigate={onNavigate} />
       ))}
+      <button
+        className="mt-2 w-full cursor-not-allowed border border-border bg-transparent text-center text-muted-foreground"
+        style={{ borderRadius: 6, padding: '6px 12px', fontSize: 12, opacity: 0.6 }}
+        disabled
+        title="Coming soon"
+      >
+        + Link existing
+      </button>
     </div>
   )
 }
@@ -522,7 +540,7 @@ function DynamicPropertiesPanel({
     // Status gets special rendering but is still editable
     if (key === 'Status' || key.includes('Status')) {
       const statusStr = String(value)
-      const color = STATUS_COLORS[statusStr] ?? '#888'
+      const style = STATUS_STYLES[statusStr] ?? DEFAULT_STATUS_STYLE
       if (editingKey === key) {
         return (
           <input
@@ -540,8 +558,15 @@ function DynamicPropertiesPanel({
       }
       return (
         <span
-          className="inline-block cursor-pointer rounded-xl px-2.5 py-0.5 text-xs font-medium text-white transition-opacity hover:opacity-80"
-          style={{ backgroundColor: color }}
+          className="inline-block cursor-pointer transition-opacity hover:opacity-80"
+          style={{
+            backgroundColor: style.bg,
+            color: style.color,
+            borderRadius: 9999,
+            padding: '1px 6px',
+            fontSize: 10,
+            fontWeight: 500,
+          }}
           onClick={() => setEditingKey(key)}
           title="Click to edit"
         >
@@ -667,7 +692,8 @@ function DynamicPropertiesPanel({
         </div>
       ) : (
         <button
-          className="mt-3 w-full cursor-pointer rounded-md border border-dashed border-border bg-transparent px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-3 w-full cursor-pointer border border-border bg-transparent text-center text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+          style={{ borderRadius: 6, padding: '6px 12px', fontSize: 12 }}
           onClick={() => setShowAddDialog(true)}
           disabled={!onAddProperty}
         >
@@ -714,8 +740,8 @@ function useBacklinks(
 function BacklinksPanel({ backlinks, onNavigate }: { backlinks: VaultEntry[]; onNavigate: (target: string) => void }) {
   return (
     <div className="mb-4">
-      <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        Backlinks {backlinks.length > 0 && <span className="ml-1 text-[11px] font-normal text-muted-foreground">{backlinks.length}</span>}
+      <h4 className="mb-2 font-semibold text-foreground" style={{ fontSize: 12 }}>
+        Backlinks {backlinks.length > 0 && <span className="ml-1 text-muted-foreground" style={{ fontSize: 11, fontWeight: 500 }}>{backlinks.length}</span>}
       </h4>
       {backlinks.length === 0 ? (
         <p className="m-0 text-[13px] text-muted-foreground">No backlinks</p>
@@ -759,10 +785,10 @@ function GitHistoryPanel({ commits }: { commits: GitCommit[] }) {
         <>
           <div className="flex flex-col gap-2.5">
             {commits.map((c) => (
-              <div key={c.hash} className="border-l-2 border-border pl-2.5">
+              <div key={c.hash} style={{ borderLeft: '2px solid var(--border)', paddingLeft: 10 }}>
                 <div className="mb-0.5 flex items-center justify-between">
-                  <span className="font-mono text-[11px] text-primary">{c.shortHash}</span>
-                  <span className="text-[11px] text-muted-foreground">{formatRelativeDate(c.date)}</span>
+                  <span className="font-mono text-foreground" style={{ fontSize: 11 }}>{c.shortHash}</span>
+                  <span className="text-muted-foreground" style={{ fontSize: 10 }}>{formatRelativeDate(c.date)}</span>
                 </div>
                 <div className="truncate text-xs text-secondary-foreground">{c.message}</div>
               </div>
@@ -813,18 +839,35 @@ export function Inspector({
 
   return (
     <aside className={cn(
-      "flex flex-col overflow-y-auto border-l border-border bg-sidebar text-sidebar-foreground transition-[width] duration-200",
+      "flex flex-col overflow-y-auto border-l border-border bg-background text-foreground transition-[width] duration-200",
       collapsed && "!w-10 !min-w-10"
     )}>
-      <div className="flex items-center gap-2 border-b border-border px-3 py-3.5" data-tauri-drag-region style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
-        <button
-          className="shrink-0 border-none bg-transparent p-1 text-xs text-muted-foreground cursor-pointer hover:text-foreground"
-          onClick={onToggle}
-          style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
-        >
-          {collapsed ? '\u25C0' : '\u25B6'}
-        </button>
-        {!collapsed && <h3 className="m-0 text-[13px] font-semibold uppercase tracking-wide text-muted-foreground">Inspector</h3>}
+      <div
+        className="flex items-center border-b border-border"
+        style={{ height: 45, padding: '0 12px', gap: 8 }}
+        data-tauri-drag-region
+      >
+        {collapsed ? (
+          <button
+            className="shrink-0 border-none bg-transparent p-1 text-muted-foreground cursor-pointer hover:text-foreground"
+            onClick={onToggle}
+            style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+          >
+            <SlidersHorizontal size={16} />
+          </button>
+        ) : (
+          <>
+            <SlidersHorizontal size={16} className="shrink-0 text-muted-foreground" />
+            <span className="flex-1 text-muted-foreground" style={{ fontSize: 13, fontWeight: 600 }}>Properties</span>
+            <button
+              className="shrink-0 border-none bg-transparent p-1 text-muted-foreground cursor-pointer hover:text-foreground"
+              onClick={onToggle}
+              style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+            >
+              <X size={16} />
+            </button>
+          </>
+        )}
       </div>
       {!collapsed && (
         <div className="p-3">
