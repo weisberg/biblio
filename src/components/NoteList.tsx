@@ -109,16 +109,6 @@ function findBacklinks(entity: VaultEntry, allEntries: VaultEntry[], allContent:
   })
 }
 
-// Priority ordering for relationship groups (lower = first).
-// Keys not listed here appear alphabetically after these.
-const GROUP_PRIORITY: Record<string, number> = {
-  'Has': 0,
-  'Children': 1,
-  'Events': 2,
-  'Topics': 3,
-}
-const BACKLINKS_KEY = 'Backlinks'
-
 function addGroup(
   groups: RelationshipGroup[],
   label: string,
@@ -192,7 +182,7 @@ function buildRelationshipGroups(
   const backlinks = findBacklinks(entity, allEntries, allContent)
     .filter((e) => !seen.has(e.path))
     .sort(sortByModified)
-  addGroup(groups, BACKLINKS_KEY, backlinks, seen)
+  addGroup(groups, 'Backlinks', backlinks, seen)
 
   return groups
 }
