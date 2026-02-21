@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, memo } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef, memo } from 'react'
 // Virtuoso removed — flat list rendering used instead
 import type { VaultEntry, SidebarSelection, ModifiedFile } from '../types'
 import { cn } from '@/lib/utils'
@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import {
   MagnifyingGlass, Plus, Wrench, Flask, Target, ArrowsClockwise,
   Users, CalendarBlank, Tag, FileText, CaretDown, CaretRight, StackSimple,
+  ArrowsDownUp, Check,
 } from '@phosphor-icons/react'
 import type { ComponentType, SVGAttributes } from 'react'
 import { getTypeColor, getTypeLightColor } from '../utils/typeColors'
@@ -91,6 +92,57 @@ function resolveRefs(refs: string[], entries: VaultEntry[]): VaultEntry[] {
 
 export function sortByModified(a: VaultEntry, b: VaultEntry): number {
   return (getDisplayDate(b) ?? 0) - (getDisplayDate(a) ?? 0)
+}
+
+export type SortOption = 'modified' | 'created' | 'title' | 'status'
+
+export const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+  { value: 'modified', label: 'Modified' },
+  { value: 'created', label: 'Created' },
+  { value: 'title', label: 'Title' },
+  { value: 'status', label: 'Status' },
+]
+
+const STATUS_ORDER: Record<string, number> = {
+  Active: 0,
+  Paused: 1,
+  Done: 2,
+  Finished: 3,
+}
+
+export function getSortComparator(option: SortOption): (a: VaultEntry, b: VaultEntry) => number {
+  switch (option) {
+    case 'modified':
+      return sortByModified
+    case 'created':
+      return (a, b) => (b.createdAt ?? b.modifiedAt ?? 0) - (a.createdAt ?? a.modifiedAt ?? 0)
+    case 'title':
+      return (a, b) => a.title.localeCompare(b.title)
+    case 'status':
+      return (a, b) => {
+        const sa = STATUS_ORDER[a.status ?? ''] ?? 999
+        const sb = STATUS_ORDER[b.status ?? ''] ?? 999
+        if (sa !== sb) return sa - sb
+        return sortByModified(a, b)
+      }
+  }
+}
+
+const SORT_STORAGE_KEY = 'laputa-sort-preferences'
+
+function loadSortPreferences(): Record<string, SortOption> {
+  try {
+    const raw = localStorage.getItem(SORT_STORAGE_KEY)
+    return raw ? JSON.parse(raw) : {}
+  } catch {
+    return {}
+  }
+}
+
+function saveSortPreferences(prefs: Record<string, SortOption>) {
+  try {
+    localStorage.setItem(SORT_STORAGE_KEY, JSON.stringify(prefs))
+  } catch { /* ignore */ }
 }
 
 function findBacklinks(entity: VaultEntry, allEntries: VaultEntry[], allContent: Record<string, string>): VaultEntry[] {
@@ -221,13 +273,91 @@ export function filterEntries(entries: VaultEntry[], selection: SidebarSelection
   }
 }
 
+function SortDropdown({
+  groupLabel,
+  current,
+  onChange,
+}: {
+  groupLabel: string
+  current: SortOption
+  onChange: (groupLabel: string, option: SortOption) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [open])
+
+  return (
+    <div ref={ref} className="relative" style={{ zIndex: open ? 10 : 0 }}>
+      <button
+        className={cn(
+          "flex items-center gap-0.5 rounded px-1 py-0.5 text-muted-foreground transition-colors hover:text-foreground hover:bg-accent",
+          open && "bg-accent text-foreground"
+        )}
+        onClick={(e) => { e.stopPropagation(); setOpen(!open) }}
+        title={`Sort by ${current}`}
+        data-testid={`sort-button-${groupLabel}`}
+      >
+        <ArrowsDownUp size={12} />
+        <span className="text-[10px] font-medium">{SORT_OPTIONS.find((o) => o.value === current)?.label}</span>
+      </button>
+      {open && (
+        <div
+          className="absolute right-0 top-full mt-1 rounded-md border border-border bg-popover shadow-md"
+          style={{ width: 130, padding: 4 }}
+          data-testid={`sort-menu-${groupLabel}`}
+        >
+          {SORT_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              className={cn(
+                "flex w-full items-center gap-1.5 rounded px-2 text-[12px] text-popover-foreground hover:bg-accent",
+                opt.value === current && "bg-accent font-medium"
+              )}
+              style={{ height: 28, border: 'none', cursor: 'pointer', background: opt.value === current ? 'var(--accent)' : 'transparent' }}
+              onClick={(e) => {
+                e.stopPropagation()
+                onChange(groupLabel, opt.value)
+                setOpen(false)
+              }}
+              data-testid={`sort-option-${opt.value}`}
+            >
+              {opt.value === current
+                ? <Check size={12} />
+                : <span style={{ width: 12, height: 12, display: 'inline-block' }} />
+              }
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function NoteListInner({ entries, selection, selectedNote, allContent, modifiedFiles, onSelectNote, onCreateNote }: NoteListProps) {
   const [search, setSearch] = useState('')
   const [searchVisible, setSearchVisible] = useState(false)
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
+  const [sortPrefs, setSortPrefs] = useState<Record<string, SortOption>>(loadSortPreferences)
 
   const isEntityView = selection.kind === 'entity'
   const isSectionGroup = selection.kind === 'sectionGroup'
+
+  const handleSortChange = useCallback((groupLabel: string, option: SortOption) => {
+    setSortPrefs((prev) => {
+      const next = { ...prev, [groupLabel]: option }
+      saveSortPreferences(next)
+      return next
+    })
+  }, [])
 
   const toggleGroup = useCallback((label: string) => {
     setCollapsedGroups((prev) => {
@@ -264,9 +394,11 @@ function NoteListInner({ entries, selection, selectedNote, allContent, modifiedF
     [entries, selection, modifiedFiles, isEntityView]
   )
 
+  const listSort = sortPrefs['__list__'] ?? 'modified'
+
   const sorted = useMemo(
-    () => isEntityView ? [] : [...filtered].sort(sortByModified),
-    [filtered, isEntityView]
+    () => isEntityView ? [] : [...filtered].sort(getSortComparator(listSort)),
+    [filtered, isEntityView, listSort]
   )
 
   const query = search.trim().toLowerCase()
@@ -385,32 +517,48 @@ function NoteListInner({ entries, selection, selectedNote, allContent, modifiedF
         ) : (
           groups.map((group) => {
             const isGroupCollapsed = collapsedGroups.has(group.label)
+            const groupSort = sortPrefs[group.label] ?? 'modified'
+            const sortedEntries = [...group.entries].sort(getSortComparator(groupSort))
             return (
               <div key={group.label}>
-                <button
-                  className="flex w-full items-center justify-between border-none bg-muted cursor-pointer"
+                <div
+                  className="flex w-full items-center justify-between bg-muted"
                   style={{ height: 32, padding: '0 16px' }}
-                  onClick={() => toggleGroup(group.label)}
                 >
-                  <span className="flex items-center gap-1.5">
+                  <button
+                    className="flex flex-1 items-center gap-1.5 border-none bg-transparent cursor-pointer p-0"
+                    onClick={() => toggleGroup(group.label)}
+                  >
                     <span className="font-mono-label text-muted-foreground">
                       {group.label}
                     </span>
                     <span className="font-mono-label text-muted-foreground" style={{ fontWeight: 400 }}>{group.entries.length}</span>
+                  </button>
+                  <span className="flex items-center gap-1.5">
+                    <SortDropdown
+                      groupLabel={group.label}
+                      current={groupSort}
+                      onChange={handleSortChange}
+                    />
+                    <button
+                      className="flex items-center border-none bg-transparent cursor-pointer p-0 text-muted-foreground"
+                      onClick={() => toggleGroup(group.label)}
+                    >
+                      {isGroupCollapsed
+                        ? <CaretRight size={12} />
+                        : <CaretDown size={12} />
+                      }
+                    </button>
                   </span>
-                  {isGroupCollapsed
-                    ? <CaretRight size={12} className="text-muted-foreground" />
-                    : <CaretDown size={12} className="text-muted-foreground" />
-                  }
-                </button>
-                {!isGroupCollapsed && group.entries.map((groupEntry) => renderItem(groupEntry))}
+                </div>
+                {!isGroupCollapsed && sortedEntries.map((groupEntry) => renderItem(groupEntry))}
               </div>
             )
           })
         )}
       </div>
     )
-  }, [onSelectNote, query, collapsedGroups, toggleGroup, renderItem, typeEntryMap])
+  }, [onSelectNote, query, collapsedGroups, toggleGroup, renderItem, typeEntryMap, sortPrefs, handleSortChange])
 
   return (
     <div className="flex flex-col overflow-hidden border-r border-border bg-card text-foreground" style={{ height: '100%' }}>
@@ -426,6 +574,13 @@ function NoteListInner({ entries, selection, selectedNote, allContent, modifiedF
                 : 'Notes'}
         </h3>
         <div className="flex items-center gap-3" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+          {!isEntityView && (
+            <SortDropdown
+              groupLabel="__list__"
+              current={listSort}
+              onChange={handleSortChange}
+            />
+          )}
           <button
             className="flex items-center text-muted-foreground transition-colors hover:text-foreground"
             onClick={() => { setSearchVisible(!searchVisible); if (searchVisible) setSearch('') }}
