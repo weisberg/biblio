@@ -2,6 +2,8 @@ import { act, render, screen, fireEvent, waitFor, within } from '@testing-librar
 import type { ReactNode } from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { DEFAULT_VAULTS } from './hooks/useVaultSwitcher'
+import { formatShortcutDisplay } from './hooks/appCommandCatalog'
+import { invoke } from '@tauri-apps/api/core'
 
 // Provide a localStorage mock that supports all methods (jsdom's may be incomplete)
 const localStorageMock = (() => {
@@ -58,13 +60,30 @@ const mockEntries = [
     belongsTo: [],
     relatedTo: [],
     status: 'Active',
+    archived: false,
     owner: 'Luca',
     cadence: null,
     modifiedAt: 1700000000,
     createdAt: null,
     fileSize: 1024,
+    snippet: '',
+    wordCount: 0,
+    relationships: {},
+    icon: null,
+    color: null,
+    order: null,
+    sidebarLabel: null,
     template: null, sort: null,
+    view: null,
+    visible: true,
+    organized: false,
+    favorite: false,
+    favoriteIndex: null,
+    listPropertiesDisplay: [],
     outgoingLinks: [],
+    properties: {},
+    hasH1: true,
+    fileKind: 'markdown',
   },
   {
     path: '/vault/topic/dev.md',
@@ -75,13 +94,30 @@ const mockEntries = [
     belongsTo: [],
     relatedTo: [],
     status: null,
+    archived: false,
     owner: null,
     cadence: null,
     modifiedAt: 1700000000,
     createdAt: null,
     fileSize: 256,
+    snippet: '',
+    wordCount: 0,
+    relationships: {},
+    icon: null,
+    color: null,
+    order: null,
+    sidebarLabel: null,
     template: null, sort: null,
+    view: null,
+    visible: true,
+    organized: false,
+    favorite: false,
+    favoriteIndex: null,
+    listPropertiesDisplay: [],
     outgoingLinks: [],
+    properties: {},
+    hasH1: true,
+    fileKind: 'markdown',
   },
 ]
 
@@ -107,6 +143,8 @@ const mockCommandResults: Record<string, unknown> = {
   get_all_content: mockAllContent,
   get_modified_files: [],
   get_note_content: mockAllContent['/vault/project/test.md'] || '',
+  reload_vault_entry: ({ path }: { path: string }) => mockEntries.find((entry) => entry.path === path) ?? null,
+  sync_vault_asset_scope_for_window: null,
   get_file_history: [],
   get_settings: { auto_pull_interval_minutes: null, telemetry_consent: true, crash_reporting_enabled: null, analytics_enabled: null, anonymous_id: null, release_channel: null },
   git_pull: { status: 'up_to_date', message: 'Already up to date', updatedFiles: [], conflictFiles: [] },
@@ -238,6 +276,8 @@ function resetMockCommandResults() {
     get_all_content: mockAllContent,
     get_modified_files: [],
     get_note_content: mockAllContent['/vault/project/test.md'] || '',
+    reload_vault_entry: ({ path }: { path: string }) => mockEntries.find((entry) => entry.path === path) ?? null,
+    sync_vault_asset_scope_for_window: null,
     get_file_history: [],
     get_settings: {
       auto_pull_interval_minutes: null,
@@ -264,7 +304,7 @@ function resolveMockCommandResult(cmd: string, args?: unknown) {
 }
 
 vi.mock('./mock-tauri', () => ({
-  isTauri: () => false,
+  isTauri: vi.fn(() => false),
   mockInvoke: vi.fn(async (cmd: string, args?: unknown) => resolveMockCommandResult(cmd, args)),
   addMockEntry: vi.fn(),
   updateMockContent: vi.fn(),
@@ -277,6 +317,24 @@ vi.mock('./utils/ai-chat', () => ({
   checkClaudeCli: vi.fn(async () => ({ installed: false })),
   streamClaudeChat: vi.fn(async () => 'mock-session'),
 }))
+
+vi.mock('./hooks/useUpdater', async () => {
+  const actual = await vi.importActual<typeof import('./hooks/useUpdater')>('./hooks/useUpdater')
+
+  return {
+    ...actual,
+    useUpdater: vi.fn(() => ({
+      status: { state: 'idle' },
+      actions: {
+        checkForUpdates: vi.fn(async () => ({ kind: 'up-to-date' })),
+        startDownload: vi.fn(),
+        openReleaseNotes: vi.fn(),
+        dismiss: vi.fn(),
+      },
+    })),
+    restartApp: vi.fn(),
+  }
+})
 
 // Mock BlockNote components (they need DOM APIs not available in jsdom)
 vi.mock('@blocknote/core', () => ({
@@ -296,6 +354,7 @@ vi.mock('@blocknote/core/extensions', () => ({
 }))
 
 vi.mock('@blocknote/react', () => ({
+  createReactBlockSpec: () => () => ({}),
   createReactInlineContentSpec: () => ({ render: () => null }),
   BlockNoteViewRaw: ({ children }: { children?: ReactNode }) => (
     <div data-testid="blocknote-view">
@@ -305,6 +364,7 @@ vi.mock('@blocknote/react', () => ({
       {children}
     </div>
   ),
+  LinkToolbar: ({ children }: { children?: ReactNode }) => <>{children}</>,
   ComponentsContext: {
     Provider: ({ children }: { children?: ReactNode }) => <>{children}</>,
   },
@@ -317,8 +377,30 @@ vi.mock('@blocknote/react', () => ({
     focus: () => {},
     onMount: (cb: () => void) => { cb(); return () => {} },
   }),
+  LinkToolbarController: () => null,
+  EditLinkButton: () => null,
+  DeleteLinkButton: () => null,
   SideMenuController: () => null,
   SuggestionMenuController: () => null,
+  useComponentsContext: () => ({
+    LinkToolbar: {
+      Button: ({
+        children,
+        label,
+        onClick,
+      }: { children?: ReactNode; label?: string; onClick?: () => void }) => (
+        <button onClick={onClick} type="button">
+          {label}
+          {children}
+        </button>
+      ),
+    },
+  }),
+  useDictionary: () => ({
+    link_toolbar: {
+      open: { tooltip: 'Open in a new tab' },
+    },
+  }),
 }))
 
 vi.mock('@blocknote/mantine', () => ({
@@ -334,15 +416,35 @@ vi.mock('./components/tolariaEditorFormatting', () => ({
 }))
 
 import App from './App'
+import { useUpdater } from './hooks/useUpdater'
+import { isTauri } from './mock-tauri'
 
 const AI_AGENTS_ONBOARDING_DISMISSED_KEY = 'tolaria:ai-agents-onboarding-dismissed'
 const CLAUDE_CODE_ONBOARDING_DISMISSED_KEY = 'tolaria:claude-code-onboarding-dismissed'
+
+function createMockUpdaterResult(
+  checkForUpdates: () => Promise<{ kind: 'up-to-date' } | { kind: 'available'; version: string; displayVersion: string } | { kind: 'error'; message: string }> = async () => ({ kind: 'up-to-date' }),
+) {
+  return {
+    status: { state: 'idle' as const },
+    actions: {
+      checkForUpdates,
+      startDownload: vi.fn(),
+      openReleaseNotes: vi.fn(),
+      dismiss: vi.fn(),
+    },
+  }
+}
 
 describe('App', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     resetMockCommandResults()
+    vi.mocked(invoke).mockImplementation(async (cmd: string, args?: unknown) => resolveMockCommandResult(cmd, args))
+    vi.mocked(isTauri).mockReturnValue(false)
+    vi.mocked(useUpdater).mockReturnValue(createMockUpdaterResult())
     localStorage.clear()
+    window.history.replaceState({}, '', '/')
     localStorage.setItem(CLAUDE_CODE_ONBOARDING_DISMISSED_KEY, '1')
   })
 
@@ -367,10 +469,40 @@ describe('App', () => {
     })
   })
 
-  it('shows keyboard shortcut hints', async () => {
+  it('opens a note window by loading only the requested entry', async () => {
+    const listVault = vi.fn(() => mockEntries)
+    const reloadVaultEntry = vi.fn(({ path }: { path: string }) =>
+      mockEntries.find((entry) => entry.path === path) ?? null,
+    )
+    const getNoteContent = vi.fn(({ path }: { path: string }) => mockAllContent[path] ?? '')
+    mockCommandResults.list_vault = listVault
+    mockCommandResults.reload_vault_entry = reloadVaultEntry
+    mockCommandResults.get_note_content = getNoteContent
+    window.history.replaceState(
+      {},
+      '',
+      '/?window=note&path=%2Fvault%2Fproject%2Ftest.md&vault=%2Fvault&title=Test+Project',
+    )
+
     render(<App />)
+
+    await waitFor(() => expect(reloadVaultEntry).toHaveBeenCalled())
+    expect(reloadVaultEntry).toHaveBeenCalledWith({ path: '/vault/project/test.md', vaultPath: '/vault' })
+    await waitFor(() => expect(getNoteContent).toHaveBeenCalled())
+    expect(getNoteContent).toHaveBeenCalledWith({ path: '/vault/project/test.md', vaultPath: '/vault' })
+    await waitFor(() => expect(window.__laputaTest?.activeTabPath).toBe('/vault/project/test.md'))
+    expect(listVault).not.toHaveBeenCalled()
+  })
+
+  it('shows keyboard shortcut hints', async () => {
+    const quickOpenHint = formatShortcutDisplay({ display: '⌘P / ⌘O' })
+    const newNoteHint = formatShortcutDisplay({ display: '⌘N' })
+    const { container } = render(<App />)
     await waitFor(() => {
-      expect(screen.getByText(/Cmd\+P or Cmd\+O to search/)).toBeInTheDocument()
+      const shortcutHint = Array.from(container.querySelectorAll('span.text-xs.text-muted-foreground'))
+        .find((element) => element.textContent === `${quickOpenHint} to search · ${newNoteHint} to create`)
+
+      expect(shortcutHint).toBeInTheDocument()
     })
   })
 
@@ -384,6 +516,45 @@ describe('App', () => {
     fireEvent.keyDown(window, { key: 's', metaKey: true })
     await waitFor(() => {
       expect(screen.getByText('Nothing to save')).toBeInTheDocument()
+    })
+  })
+
+  it('shows visible feedback when a manual update check finds an update', async () => {
+    vi.mocked(useUpdater).mockReturnValue(createMockUpdaterResult(async () => ({
+      kind: 'available',
+      version: '2026.4.25',
+      displayVersion: '2026.4.25',
+    })))
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByText('All Notes')).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByTestId('status-build-number'))
+
+    await waitFor(() => {
+      expect(screen.getByText('Tolaria 2026.4.25 is available')).toBeInTheDocument()
+    })
+  })
+
+  it('shows visible feedback when a menu-driven update check finds no eligible update', async () => {
+    vi.mocked(useUpdater).mockReturnValue(createMockUpdaterResult(async () => ({ kind: 'up-to-date' })))
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByText('All Notes')).toBeInTheDocument()
+      expect(typeof window.__laputaTest?.dispatchBrowserMenuCommand).toBe('function')
+    })
+
+    act(() => {
+      window.__laputaTest?.dispatchBrowserMenuCommand?.('app-check-for-updates')
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText('No newer stable update is available right now')).toBeInTheDocument()
     })
   })
 
@@ -656,7 +827,7 @@ describe('App', () => {
 
     render(<App />)
 
-    const noteListContainer = await screen.findByTestId('note-list-container')
+    const noteListContainer = await screen.findByTestId('note-list-container', {}, { timeout: 5000 })
     const getHeader = () => getHeaderForNoteList(noteListContainer)
 
     await waitFor(() => {

@@ -3,6 +3,7 @@ import { renderHook } from '@testing-library/react'
 import { useCommandRegistry, buildTypeCommands, extractVaultTypes, pluralizeType, groupSortKey } from './useCommandRegistry'
 import type { CommandAction } from './useCommandRegistry'
 import { NEW_AI_CHAT_EVENT, OPEN_AI_CHAT_EVENT } from '../utils/aiPromptBridge'
+import { formatShortcutDisplay } from './appCommandCatalog'
 
 function makeConfig(overrides: Record<string, unknown> = {}) {
   return {
@@ -24,6 +25,8 @@ function makeConfig(overrides: Record<string, unknown> = {}) {
     onToggleInspector: vi.fn(),
     onToggleDiff: vi.fn(),
     onToggleRawEditor: vi.fn(),
+    noteLayout: 'centered',
+    onToggleNoteLayout: vi.fn(),
     onToggleAIChat: vi.fn(),
     onOpenVault: vi.fn(),
     activeNoteModified: false,
@@ -247,7 +250,9 @@ describe('useCommandRegistry', () => {
   it('shows Cmd+E on toggle organized and removes it from archive note', () => {
     const config = makeConfig()
     const { result } = renderHook(() => useCommandRegistry(config))
-    expect(findCommand(result.current, 'toggle-organized')?.shortcut).toBe('⌘E')
+    expect(findCommand(result.current, 'toggle-organized')?.shortcut).toBe(
+      formatShortcutDisplay({ display: '⌘E' }),
+    )
     expect(findCommand(result.current, 'archive-note')?.shortcut).toBeUndefined()
   })
 
@@ -255,6 +260,29 @@ describe('useCommandRegistry', () => {
     const config = makeConfig({ onToggleRawEditor: undefined })
     const { result } = renderHook(() => useCommandRegistry(config))
     expect(findCommand(result.current, 'toggle-raw-editor')?.enabled).toBe(false)
+  })
+
+  it('exposes a command palette action for the note layout preference', () => {
+    const onToggleNoteLayout = vi.fn()
+    const config = makeConfig({ noteLayout: 'centered', onToggleNoteLayout })
+    const { result } = renderHook(() => useCommandRegistry(config))
+    const cmd = findCommand(result.current, 'toggle-note-layout')
+
+    expect(cmd).toBeDefined()
+    expect(cmd!.group).toBe('View')
+    expect(cmd!.label).toBe('Use Left-Aligned Note Layout')
+    expect(cmd!.keywords).toContain('wide')
+
+    cmd!.execute()
+
+    expect(onToggleNoteLayout).toHaveBeenCalledOnce()
+  })
+
+  it('updates note layout command copy when left alignment is active', () => {
+    const config = makeConfig({ noteLayout: 'left' })
+    const { result } = renderHook(() => useCommandRegistry(config))
+
+    expect(findCommand(result.current, 'toggle-note-layout')?.label).toBe('Use Centered Note Layout')
   })
 
   it('includes a New AI chat command that opens and resets the panel session', () => {
@@ -328,12 +356,13 @@ describe('useCommandRegistry', () => {
     expect(findCommand(result.current, 'open-daily-note')).toBeUndefined()
   })
 
-  it('includes Give Feedback in the Settings group when available', () => {
+  it('includes Contribute in the Settings group when available', () => {
     const onOpenFeedback = vi.fn()
     const config = makeConfig({ onOpenFeedback })
     const { result } = renderHook(() => useCommandRegistry(config))
-    const cmd = findCommand(result.current, 'give-feedback')
+    const cmd = findCommand(result.current, 'open-contribute')
     expect(cmd).toBeDefined()
+    expect(cmd!.label).toBe('Contribute')
     expect(cmd!.group).toBe('Settings')
     expect(cmd!.enabled).toBe(true)
 
@@ -355,7 +384,7 @@ describe('useCommandRegistry', () => {
     expect(newNoteCommands).toHaveLength(1)
     expect(newNoteCommands[0]).toMatchObject({
       id: 'create-note',
-      shortcut: '⌘N',
+      shortcut: formatShortcutDisplay({ display: '⌘N' }),
     })
   })
 

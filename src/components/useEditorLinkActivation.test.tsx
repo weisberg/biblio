@@ -34,15 +34,30 @@ function appendWikilink(container: HTMLElement, target: string) {
   return wikilink
 }
 
+function appendEditableWikilink(container: HTMLElement, target: string) {
+  const editable = document.createElement('div')
+  editable.setAttribute('contenteditable', 'true')
+  const wikilink = appendWikilink(editable, target)
+  container.appendChild(editable)
+  return { editable, wikilink }
+}
+
 function appendUrl(container: HTMLElement, href: string) {
   const link = document.createElement('a')
   link.setAttribute('href', href)
   link.textContent = href
-  link.addEventListener('click', (event) => {
-    if (!(event as MouseEvent).metaKey) event.preventDefault()
-  })
   container.appendChild(link)
   return link
+}
+
+function dispatchClick(target: HTMLElement, options: MouseEventInit = {}) {
+  const event = new MouseEvent('click', {
+    bubbles: true,
+    cancelable: true,
+    ...options,
+  })
+  target.dispatchEvent(event)
+  return event
 }
 
 describe('useEditorLinkActivation', () => {
@@ -61,15 +76,42 @@ describe('useEditorLinkActivation', () => {
     expect(onNavigateWikilink).toHaveBeenCalledWith('Alpha Project')
   })
 
+  it('blurs an active editor before navigating a Cmd-clicked wikilink', () => {
+    const { container, onNavigateWikilink } = renderHarness()
+    const { editable, wikilink } = appendEditableWikilink(container, 'Alpha Project')
+
+    editable.focus()
+    expect(document.activeElement).toBe(editable)
+
+    fireEvent.click(wikilink, { metaKey: true })
+
+    expect(onNavigateWikilink).toHaveBeenCalledWith('Alpha Project')
+    expect(document.activeElement).not.toBe(editable)
+  })
+
   it('opens URLs only on Cmd+click', () => {
     const { container } = renderHarness()
     const link = appendUrl(container, 'https://example.com')
 
-    fireEvent.click(link)
+    const plainClick = dispatchClick(link)
     expect(mockOpenExternalUrl).not.toHaveBeenCalled()
+    expect(plainClick.defaultPrevented).toBe(true)
 
-    fireEvent.click(link, { metaKey: true })
+    const modifiedClick = dispatchClick(link, { metaKey: true })
     expect(mockOpenExternalUrl).toHaveBeenCalledWith('https://example.com')
+    expect(modifiedClick.defaultPrevented).toBe(true)
+  })
+
+  it('blocks malformed URL anchors instead of opening or falling through', () => {
+    const { container } = renderHarness()
+    const link = appendUrl(container, 'https://exa mple.com')
+
+    const plainClick = dispatchClick(link)
+    const modifiedClick = dispatchClick(link, { metaKey: true })
+
+    expect(plainClick.defaultPrevented).toBe(true)
+    expect(modifiedClick.defaultPrevented).toBe(true)
+    expect(mockOpenExternalUrl).not.toHaveBeenCalled()
   })
 
   it('ignores malformed URLs and links inside code blocks', () => {

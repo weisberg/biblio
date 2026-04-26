@@ -1,8 +1,18 @@
 import { useState } from 'react'
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import {
+  createEvent,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react'
 import { WikilinkChatInput } from './WikilinkChatInput'
-import { UNSUPPORTED_INLINE_PASTE_MESSAGE } from './InlineWikilinkInput'
+import { extractDroppedPathText } from './inlineWikilinkDropText'
+import {
+  UNSUPPORTED_INLINE_PASTE_MESSAGE,
+} from './InlineWikilinkInput'
+import { isInsertBeforeInput } from './inlineWikilinkBeforeInput'
 import type { VaultEntry } from '../types'
 
 const makeEntry = (overrides: Partial<VaultEntry> = {}): VaultEntry => ({
@@ -41,19 +51,25 @@ function Controlled({
   onUnsupportedPaste,
   disabled = false,
   placeholder,
+  onDraftChange,
 }: {
   onSend?: (text: string, refs: Array<{ title: string; path: string; type: string | null }>) => void
   onUnsupportedPaste?: (message: string) => void
   disabled?: boolean
   placeholder?: string
+  onDraftChange?: (value: string) => void
 }) {
   const [value, setValue] = useState('')
+  const handleChange = (nextValue: string) => {
+    onDraftChange?.(nextValue)
+    setValue(nextValue)
+  }
 
   return (
     <WikilinkChatInput
       entries={entries}
       value={value}
-      onChange={setValue}
+      onChange={handleChange}
       onSend={onSend ?? vi.fn()}
       onUnsupportedPaste={onUnsupportedPaste}
       disabled={disabled}
@@ -90,6 +106,39 @@ function clickFirstSuggestion() {
   const rows = screen.getByTestId('wikilink-menu').querySelectorAll('[class*="cursor-pointer"]')
   expect(rows.length).toBeGreaterThan(0)
   fireEvent.click(rows[0])
+}
+
+function fireComposingKeyDown(editor: HTMLElement, key: string) {
+  const event = createEvent.keyDown(editor, {
+    key,
+    keyCode: 229,
+    which: 229,
+  })
+
+  Object.defineProperty(event, 'isComposing', {
+    configurable: true,
+    value: true,
+  })
+
+  fireEvent(editor, event)
+}
+
+function createFileLikeDataTransfer({
+  plainText = '',
+  uriList = '',
+}: {
+  plainText?: string
+  uriList?: string
+}) {
+  return {
+    getData: vi.fn((type: string) => {
+      if (type === 'text/plain') return plainText
+      if (type === 'text/uri-list') return uriList
+      return ''
+    }),
+    files: [new File(['folder'], 'Projects')],
+    items: [{ kind: 'file', type: '' }],
+  }
 }
 
 describe('WikilinkChatInput', () => {
@@ -143,6 +192,137 @@ describe('WikilinkChatInput', () => {
 
     expect(screen.getByTestId('inline-wikilink-chip')).toBeInTheDocument()
     expect(onSend).not.toHaveBeenCalled()
+  })
+
+  it('does not hijack Enter while IME composition is active', async () => {
+    const onDraftChange = vi.fn()
+    const onSend = vi.fn()
+    render(<Controlled onDraftChange={onDraftChange} onSend={onSend} />)
+
+    const editor = screen.getByTestId('agent-input')
+    fireEvent.focus(editor)
+    fireEvent.compositionStart(editor)
+    editor.textContent = 'ni'
+    setSelection(editor, 2)
+    fireEvent.input(editor)
+
+    expect(onDraftChange).not.toHaveBeenCalled()
+
+    fireComposingKeyDown(editor, 'Enter')
+    expect(onSend).not.toHaveBeenCalled()
+
+    editor.textContent = '你'
+    setSelection(editor, 1)
+    fireEvent.compositionEnd(editor)
+
+    await waitFor(() => {
+      expect(onDraftChange).toHaveBeenCalledWith('你')
+    })
+    expect(editor.textContent).toContain('你')
+  })
+
+  it('does not select wikilink suggestions while IME composition is active', () => {
+    render(<Controlled />)
+    updateEditorText('[[a')
+
+    const editor = screen.getByTestId('agent-input')
+    fireEvent.compositionStart(editor)
+    fireComposingKeyDown(editor, 'Enter')
+
+    expect(screen.queryByTestId('inline-wikilink-chip')).toBeNull()
+    expect(screen.getByTestId('wikilink-menu').textContent).toContain('Alpha')
+  })
+
+  it('clears IME-injected stray text nodes after composition ends', async () => {
+    const onDraftChange = vi.fn()
+    render(<Controlled onDraftChange={onDraftChange} />)
+    const initialEditor = screen.getByTestId('agent-input') as HTMLDivElement
+    initialEditor.focus()
+
+    fireEvent.compositionStart(initialEditor)
+    initialEditor.appendChild(document.createTextNode('你'))
+    fireEvent.input(initialEditor)
+    fireEvent.compositionEnd(initialEditor)
+
+    await waitFor(() => {
+      expect(onDraftChange).toHaveBeenCalledWith('你')
+    })
+    await waitFor(() => {
+      const editor = screen.getByTestId('agent-input') as HTMLDivElement
+      expect(editor.textContent).toBe('你')
+    })
+  })
+
+  it('does not steal focus back if it was moved elsewhere during composition end', async () => {
+    const onDraftChange = vi.fn()
+    render(
+      <>
+        <Controlled onDraftChange={onDraftChange} />
+        <button data-testid="other-target">Other</button>
+      </>,
+    )
+    const initialEditor = screen.getByTestId('agent-input') as HTMLDivElement
+    const otherTarget = screen.getByTestId('other-target') as HTMLButtonElement
+    initialEditor.focus()
+
+    fireEvent.compositionStart(initialEditor)
+    initialEditor.appendChild(document.createTextNode('你'))
+    fireEvent.input(initialEditor)
+
+    otherTarget.focus()
+    fireEvent.compositionEnd(initialEditor)
+
+    await waitFor(() => {
+      expect(onDraftChange).toHaveBeenCalledWith('你')
+    })
+    expect(document.activeElement).toBe(otherTarget)
+  })
+
+  it('does not reset the DOM selection while IME composition is active', () => {
+    const removeAllRanges = vi.spyOn(Selection.prototype, 'removeAllRanges')
+    render(<Controlled />)
+    const editor = screen.getByTestId('agent-input') as HTMLDivElement
+    editor.focus()
+
+    fireEvent.compositionStart(editor)
+    editor.appendChild(document.createTextNode('ni'))
+    setSelection(editor, 2)
+
+    removeAllRanges.mockClear()
+    fireEvent.keyUp(editor)
+    fireEvent.click(editor)
+    fireEvent.mouseUp(editor)
+
+    expect(removeAllRanges).not.toHaveBeenCalled()
+    expect(editor.textContent).toContain('ni')
+
+    removeAllRanges.mockRestore()
+  })
+
+  it('lets committed composed characters reach the native input pipeline once', () => {
+    const onDraftChange = vi.fn()
+    render(<Controlled onDraftChange={onDraftChange} />)
+    const editor = screen.getByTestId('agent-input')
+    editor.focus()
+
+    const portugueseText = 'á é í ç ã õ'
+    const accentedKey = createEvent.keyDown(editor, { key: 'á' })
+    fireEvent(editor, accentedKey)
+    expect(accentedKey.defaultPrevented).toBe(false)
+
+    editor.textContent = portugueseText
+    setSelection(editor, portugueseText.length)
+    fireEvent.input(editor)
+    expect(onDraftChange).toHaveBeenLastCalledWith(portugueseText)
+
+    const cjkKey = createEvent.keyDown(editor, { key: '你' })
+    fireEvent(editor, cjkKey)
+    expect(cjkKey.defaultPrevented).toBe(false)
+
+    editor.textContent = `${portugueseText}你`
+    setSelection(editor, portugueseText.length + 1)
+    fireEvent.input(editor)
+    expect(onDraftChange).toHaveBeenLastCalledWith(`${portugueseText}你`)
   })
 
   it('deletes an inline chip with a single Backspace', () => {
@@ -200,6 +380,43 @@ describe('WikilinkChatInput', () => {
     fireEvent.paste(editor, { clipboardData })
 
     expect(onUnsupportedPaste).toHaveBeenCalledWith(UNSUPPORTED_INLINE_PASTE_MESSAGE)
+
+    updateEditorText('still works')
+    expect(editor.textContent).toContain('still works')
+  })
+
+  it('extracts dropped folder paths from text/plain payloads', () => {
+    expect(extractDroppedPathText(
+      createFileLikeDataTransfer({
+        plainText: '/Users/test/Projects',
+      }) as DataTransfer,
+    )).toBe('/Users/test/Projects')
+  })
+
+  it('falls back to file URLs exposed through uri lists', () => {
+    expect(extractDroppedPathText(
+      createFileLikeDataTransfer({
+        uriList: 'file:///Users/test/My%20Folder',
+      }) as DataTransfer,
+    )).toBe('"/Users/test/My Folder"')
+  })
+
+  it('treats missing inputType as a non-insert beforeinput event', () => {
+    expect(() => isInsertBeforeInput({} as InputEvent)).not.toThrow()
+    expect(isInsertBeforeInput({} as InputEvent)).toBe(false)
+    expect(isInsertBeforeInput({ inputType: 'insertFromPaste' } as InputEvent)).toBe(true)
+  })
+
+  it('ignores beforeinput events without inputType instead of crashing', () => {
+    render(<Controlled />)
+
+    const editor = screen.getByTestId('agent-input')
+    const beforeInputEvent = new Event('beforeinput', {
+      bubbles: true,
+      cancelable: true,
+    })
+
+    expect(() => fireEvent(editor, beforeInputEvent)).not.toThrow()
 
     updateEditorText('still works')
     expect(editor.textContent).toContain('still works')

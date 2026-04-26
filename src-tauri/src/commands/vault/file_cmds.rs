@@ -1,4 +1,5 @@
 use crate::commands::expand_tilde;
+use crate::vault::filename_rules::validate_folder_name;
 use crate::vault::{self, FolderNode, VaultEntry};
 use std::path::{Path, PathBuf};
 
@@ -37,6 +38,41 @@ fn with_requested_root_path<T>(
 ) -> Result<T, String> {
     let raw_vault_path = vault_path.to_string_lossy();
     with_requested_root(raw_vault_path.as_ref(), action)
+}
+
+fn sync_image_asset_scope(
+    app_handle: &tauri::AppHandle,
+    requested_root: &str,
+) -> Result<(), String> {
+    #[cfg(desktop)]
+    crate::sync_vault_asset_scope(app_handle, Path::new(requested_root))?;
+    #[cfg(not(desktop))]
+    let _ = requested_root;
+    #[cfg(not(desktop))]
+    let _ = app_handle;
+    Ok(())
+}
+
+fn with_image_asset_scope(
+    app_handle: &tauri::AppHandle,
+    vault_path: &Path,
+    action: impl FnOnce(&str) -> Result<String, String>,
+) -> Result<String, String> {
+    with_requested_root_path(vault_path, |requested_root| {
+        let saved_path = action(requested_root)?;
+        sync_image_asset_scope(app_handle, requested_root)?;
+        Ok(saved_path)
+    })
+}
+
+#[tauri::command]
+pub fn sync_vault_asset_scope_for_window(
+    app_handle: tauri::AppHandle,
+    vault_path: PathBuf,
+) -> Result<(), String> {
+    with_requested_root_path(vault_path.as_path(), |requested_root| {
+        sync_image_asset_scope(&app_handle, requested_root)
+    })
 }
 
 fn with_writable_note_path<T>(
@@ -114,6 +150,7 @@ pub fn create_vault_folder(vault_path: PathBuf, folder_name: PathBuf) -> Result<
     with_boundary(Some(raw_vault_path.as_ref()), |boundary| {
         let folder_name = folder_name.to_string_lossy();
         let folder_path = boundary.child_path(folder_name.as_ref())?;
+        validate_folder_name(folder_name.as_ref())?;
         ensure_missing_folder(&folder_path, folder_name.as_ref())?;
         std::fs::create_dir_all(&folder_path)
             .map_err(|e| format!("Failed to create folder: {}", e))?;
@@ -146,15 +183,24 @@ pub fn sync_note_title(path: PathBuf, vault_path: Option<PathBuf>) -> Result<boo
 }
 
 #[tauri::command]
-pub fn save_image(vault_path: PathBuf, filename: String, data: String) -> Result<String, String> {
-    with_requested_root_path(vault_path.as_path(), |requested_root| {
+pub fn save_image(
+    app_handle: tauri::AppHandle,
+    vault_path: PathBuf,
+    filename: String,
+    data: String,
+) -> Result<String, String> {
+    with_image_asset_scope(&app_handle, vault_path.as_path(), |requested_root| {
         vault::save_image(requested_root, &filename, &data)
     })
 }
 
 #[tauri::command]
-pub fn copy_image_to_vault(vault_path: PathBuf, source_path: PathBuf) -> Result<String, String> {
-    with_requested_root_path(vault_path.as_path(), |requested_root| {
+pub fn copy_image_to_vault(
+    app_handle: tauri::AppHandle,
+    vault_path: PathBuf,
+    source_path: PathBuf,
+) -> Result<String, String> {
+    with_image_asset_scope(&app_handle, vault_path.as_path(), |requested_root| {
         vault::copy_image_to_vault(requested_root, source_path.to_string_lossy().as_ref())
     })
 }
@@ -167,4 +213,92 @@ pub fn list_vault(path: PathBuf) -> Result<Vec<VaultEntry>, String> {
 #[tauri::command]
 pub fn list_vault_folders(path: PathBuf) -> Result<Vec<FolderNode>, String> {
     with_expanded_vault_root(path.as_path(), vault::scan_vault_folders)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use tempfile::TempDir;
+
+    fn vault_root(dir: &TempDir) -> PathBuf {
+        dir.path().to_path_buf()
+    }
+
+    fn note_path(dir: &TempDir, name: &str) -> PathBuf {
+        dir.path().join(name)
+    }
+
+    #[test]
+    fn note_content_commands_roundtrip_with_requested_vault() {
+        let dir = TempDir::new().unwrap();
+        let root = vault_root(&dir);
+        let note = note_path(&dir, "notes/command-note.md");
+
+        create_note_content(
+            note.clone(),
+            "# Command Note\n".to_string(),
+            Some(root.clone()),
+        )
+        .unwrap();
+        assert_eq!(
+            get_note_content(note.clone(), Some(root.clone())).unwrap(),
+            "# Command Note\n"
+        );
+
+        save_note_content(
+            note.clone(),
+            "---\ntitle: Command Note\n---\n# Command Note\nBody\n".to_string(),
+            Some(root.clone()),
+        )
+        .unwrap();
+        assert!(!sync_note_title(note.clone(), Some(root.clone())).unwrap());
+
+        save_note_content(
+            note.clone(),
+            "# Updated Command Note\n".to_string(),
+            Some(root.clone()),
+        )
+        .unwrap();
+        assert!(sync_note_title(note.clone(), Some(root.clone())).unwrap());
+        assert!(get_note_content(note, Some(root))
+            .unwrap()
+            .contains("title: Command Note"));
+    }
+
+    #[test]
+    fn folder_and_listing_commands_use_expanded_vault_root() {
+        let dir = TempDir::new().unwrap();
+        let root = vault_root(&dir);
+        fs::write(dir.path().join("root.md"), "# Root\n").unwrap();
+
+        assert_eq!(
+            create_vault_folder(root.clone(), PathBuf::from("Projects")).unwrap(),
+            "Projects"
+        );
+        fs::write(dir.path().join("Projects/project.md"), "# Project\n").unwrap();
+
+        let entries = list_vault(root.clone()).unwrap();
+        assert!(entries.iter().any(|entry| entry.filename == "root.md"));
+        assert!(entries.iter().any(|entry| entry.filename == "project.md"));
+
+        let folders = list_vault_folders(root).unwrap();
+        assert!(folders.iter().any(|folder| folder.name == "Projects"));
+    }
+
+    #[test]
+    fn commands_reject_paths_outside_requested_vault() {
+        let vault = TempDir::new().unwrap();
+        let outside = TempDir::new().unwrap();
+        let outside_note = outside.path().join("outside.md");
+        fs::write(&outside_note, "# Outside\n").unwrap();
+
+        let error = get_note_content(outside_note, Some(vault.path().to_path_buf())).unwrap_err();
+        assert!(error.contains("Path must stay inside the active vault"));
+
+        let folder_error =
+            create_vault_folder(vault.path().to_path_buf(), PathBuf::from("../escape"))
+                .unwrap_err();
+        assert!(folder_error.contains("Path must stay inside the active vault"));
+    }
 }

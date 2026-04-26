@@ -33,6 +33,8 @@
         "connect-src": "'self' ipc: http://ipc.localhost ws://localhost:9710 ws://127.0.0.1:9710 ws://localhost:9711 ws://127.0.0.1:9711 https:",
         "img-src": "'self' asset: http://asset.localhost data: blob: https:",
         "style-src": "'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "style-src-elem": "'self' 'nonce-tolaria-runtime-style' https://fonts.googleapis.com",
+        "style-src-attr": "'unsafe-inline'",
         "font-src": "'self' data: https://fonts.gstatic.com",
         "media-src": "'self' data: blob: https:",
         "object-src": "'none'"
@@ -47,6 +49,11 @@
     "active": true,
     "targets": "all",
     "createUpdaterArtifacts": true,
+    "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      }
+    },
     "resources": {
       "resources/mcp-server/**/*": "mcp-server/"
     },
@@ -63,6 +70,9 @@
       "endpoints": [
         "https://refactoringhq.github.io/tolaria/stable/latest.json"
       ],
+      "windows": {
+        "installMode": "passive"
+      },
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEE4NkQ5MDI3REVCRkFGNUMKUldSY3I3L2VKNUJ0cU5JRlRZZlp3NGhnU3ZwbkVKeGVvREpmb2sxRVJndHFpVFZPNlArbEE5R1IK"
     }
   }

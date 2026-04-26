@@ -6,7 +6,10 @@ import { queueAiPrompt, requestOpenAiChat } from '../utils/aiPromptBridge'
 import type { NoteReference } from '../utils/ai-context'
 import type { CommandAction, CommandGroup } from '../hooks/useCommandRegistry'
 import { groupSortKey } from '../hooks/useCommandRegistry'
+import { rememberFeedbackDialogOpener } from '../lib/feedbackDialogOpener'
+import { createTranslator, type AppLocale } from '../lib/i18n'
 import { CommandPaletteAiMode } from './CommandPaletteAiMode'
+import { Input } from './ui/input'
 
 interface CommandPaletteProps {
   open: boolean
@@ -15,6 +18,7 @@ interface CommandPaletteProps {
   claudeCodeReady?: boolean
   aiAgentReady?: boolean
   aiAgentLabel?: string
+  locale?: AppLocale
   onClose: () => void
 }
 
@@ -105,22 +109,36 @@ function usePaletteResults(commands: CommandAction[], query: string) {
   }
 }
 
+function rememberCommandOpener(
+  command: CommandAction,
+  target: HTMLInputElement | HTMLDivElement | null,
+) {
+  if (command.id !== 'open-contribute') return
+  rememberFeedbackDialogOpener(target instanceof HTMLElement ? target : null)
+}
+
 function CommandPaletteInput({
   inputRef,
   query,
   onChange,
+  placeholder,
 }: {
   inputRef: React.RefObject<HTMLInputElement | null>
   query: string
   onChange: (value: string) => void
+  placeholder: string
 }) {
   return (
-    <input
+    <Input
       ref={inputRef}
-      className="border-b border-border bg-transparent px-4 py-3 text-[15px] text-foreground outline-none placeholder:text-muted-foreground"
+      className="h-auto rounded-none border-x-0 border-t-0 border-b border-border bg-transparent px-4 py-3 text-[15px] text-foreground shadow-none transition-none outline-none placeholder:text-muted-foreground focus-visible:border-border focus-visible:ring-0 md:text-[15px]"
       type="text"
-      placeholder="Type a command..."
+      placeholder={placeholder}
       value={query}
+      spellCheck={false}
+      autoCorrect="off"
+      autoCapitalize="off"
+      autoComplete="off"
       onChange={(event) => onChange(event.target.value)}
     />
   )
@@ -130,12 +148,14 @@ function CommandPaletteResults({
   groups,
   selectedIndex,
   listRef,
+  emptyText,
   onHover,
   onSelect,
 }: {
   groups: { group: CommandGroup; items: CommandAction[] }[]
   selectedIndex: number
   listRef: React.RefObject<HTMLDivElement | null>
+  emptyText: string
   onHover: (index: number) => void
   onSelect: (command: CommandAction) => void
 }) {
@@ -145,7 +165,7 @@ function CommandPaletteResults({
     return (
       <div className="flex-1 overflow-y-auto py-1" ref={listRef}>
         <div className="px-4 py-6 text-center text-[13px] text-muted-foreground">
-          No matching commands
+          {emptyText}
         </div>
       </div>
     )
@@ -193,15 +213,23 @@ function CommandPaletteResults({
 function CommandPaletteFooter({
   aiMode,
   aiAgentLabel = 'Claude Code',
+  footerText,
 }: {
   aiMode: boolean
   aiAgentLabel?: string
+  footerText: {
+    aiMode: string
+    navigate: string
+    select: string
+    send: string
+    close: string
+  }
 }) {
   return (
     <div className="flex items-center gap-4 border-t border-border px-4 py-1.5 text-[11px] text-muted-foreground">
-      <span>{aiMode ? `${aiAgentLabel} mode` : '↑↓ navigate'}</span>
-      <span>{aiMode ? '↵ send' : '↵ select'}</span>
-      <span>esc close</span>
+      <span>{aiMode ? footerText.aiMode.replace('{agent}', aiAgentLabel) : footerText.navigate}</span>
+      <span>{aiMode ? footerText.send : footerText.select}</span>
+      <span>{footerText.close}</span>
     </div>
   )
 }
@@ -217,6 +245,7 @@ function OpenCommandPalette({
   claudeCodeReady = true,
   aiAgentReady,
   aiAgentLabel = 'Claude Code',
+  locale = 'en',
   onClose,
 }: Omit<CommandPaletteProps, 'open'>) {
   const [query, setQuery] = useState('')
@@ -228,6 +257,14 @@ function OpenCommandPalette({
   const aiMode = aiValue.startsWith(' ')
   const resolvedAiAgentReady = aiAgentReady ?? claudeCodeReady
   const { groups, flatList } = usePaletteResults(commands, query)
+  const t = createTranslator(locale)
+  const footerText = {
+    aiMode: t('command.aiMode', { agent: '{agent}' }),
+    navigate: t('command.footerNavigate'),
+    select: t('command.footerSelect'),
+    send: t('command.footerSend'),
+    close: t('command.footerClose'),
+  }
 
   useLayoutEffect(() => {
     const target = aiMode ? aiInputRef.current : inputRef.current
@@ -274,6 +311,7 @@ function OpenCommandPalette({
         event.preventDefault()
         const command = flatList[selectedIndex]
         if (!command) return
+        rememberCommandOpener(command, inputRef.current)
         onClose()
         command.execute()
       }
@@ -306,6 +344,7 @@ function OpenCommandPalette({
   }
 
   const handleSelectCommand = (command: CommandAction) => {
+    rememberCommandOpener(command, inputRef.current)
     onClose()
     command.execute()
   }
@@ -348,15 +387,21 @@ function OpenCommandPalette({
           />
         ) : (
           <>
-            <CommandPaletteInput inputRef={inputRef} query={query} onChange={handleQueryChange} />
+            <CommandPaletteInput
+              inputRef={inputRef}
+              query={query}
+              placeholder={t('command.palettePlaceholder')}
+              onChange={handleQueryChange}
+            />
             <CommandPaletteResults
               groups={groups}
               selectedIndex={selectedIndex}
               listRef={listRef}
+              emptyText={t('command.noMatches')}
               onHover={setSelectedIndex}
               onSelect={handleSelectCommand}
             />
-            <CommandPaletteFooter aiMode={false} aiAgentLabel={aiAgentLabel} />
+            <CommandPaletteFooter aiMode={false} aiAgentLabel={aiAgentLabel} footerText={footerText} />
           </>
         )}
       </div>

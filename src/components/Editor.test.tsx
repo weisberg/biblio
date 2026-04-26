@@ -1,6 +1,8 @@
 import { render as rtlRender, screen, fireEvent, act } from '@testing-library/react'
 import type { ComponentProps, PropsWithChildren, ReactElement } from 'react'
-import { describe, it, expect, vi } from 'vitest'
+import { beforeEach, describe, it, expect, vi } from 'vitest'
+import { formatShortcutDisplay } from '../hooks/appCommandCatalog'
+import { RUNTIME_STYLE_NONCE } from '../lib/runtimeStyleNonce'
 
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
@@ -33,6 +35,9 @@ const mockEditor = vi.hoisted(() => ({
   focus: vi.fn(),
   setTextCursorPosition: vi.fn(),
 }))
+const blockNoteCreation = vi.hoisted(() => ({
+  options: [] as unknown[],
+}))
 
 // Mock BlockNote components
 vi.mock('@blocknote/core', () => ({
@@ -58,9 +63,14 @@ const capturedGetItemsByTrigger: Record<string, (query: string) => Promise<any[]
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- mock
 let capturedGetItems: ((query: string) => Promise<any[]>) | null = null
 vi.mock('@blocknote/react', () => ({
+  createReactBlockSpec: () => () => ({}),
   createReactInlineContentSpec: () => ({ render: () => null }),
-  useCreateBlockNote: () => mockEditor,
+  useCreateBlockNote: (options: unknown) => {
+    blockNoteCreation.options.push(options)
+    return mockEditor
+  },
   FormattingToolbar: ({ children }: PropsWithChildren) => <>{children}</>,
+  LinkToolbar: ({ children }: PropsWithChildren) => <>{children}</>,
   getFormattingToolbarItems: () => [],
   getDefaultReactSlashMenuItems: () => [],
   ComponentsContext: {
@@ -68,10 +78,18 @@ vi.mock('@blocknote/react', () => ({
   },
   BlockNoteViewRaw: ({ children, editable }: PropsWithChildren<{ editable?: boolean }>) => (
     <div data-testid="blocknote-view" data-editable={editable !== false ? 'true' : 'false'}>
+      <div
+        contentEditable={editable !== false}
+        data-testid="blocknote-editable"
+        suppressContentEditableWarning
+      />
       {children}
     </div>
   ),
   FormattingToolbarController: () => null,
+  LinkToolbarController: () => null,
+  EditLinkButton: () => null,
+  DeleteLinkButton: () => null,
   SideMenuController: () => null,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- mock
   SuggestionMenuController: (props: any) => {
@@ -79,6 +97,25 @@ vi.mock('@blocknote/react', () => ({
     if (props.triggerCharacter === '[[') capturedGetItems = props.getItems
     return null
   },
+  useComponentsContext: () => ({
+    LinkToolbar: {
+      Button: ({
+        children,
+        label,
+        onClick,
+      }: PropsWithChildren<{ label?: string; onClick?: () => void }>) => (
+        <button onClick={onClick} type="button">
+          {label}
+          {children}
+        </button>
+      ),
+    },
+  }),
+  useDictionary: () => ({
+    link_toolbar: {
+      open: { tooltip: 'Open in a new tab' },
+    },
+  }),
 }))
 
 vi.mock('@blocknote/mantine', () => ({
@@ -180,10 +217,19 @@ function renderEditor(overrides: Partial<EditorComponentProps> = {}) {
 }
 
 describe('Editor', () => {
+  beforeEach(() => {
+    blockNoteCreation.options = []
+  })
+
   it('shows empty state when no tabs are open', () => {
-    renderEditor()
+    const quickOpenHint = formatShortcutDisplay({ display: '⌘P / ⌘O' })
+    const newNoteHint = formatShortcutDisplay({ display: '⌘N' })
+    const { container } = renderEditor()
     expect(screen.getByText('Select a note to start editing')).toBeInTheDocument()
-    expect(screen.getByText(/Cmd\+P or Cmd\+O to search/)).toBeInTheDocument()
+    const shortcutHint = Array.from(container.querySelectorAll('span.text-xs.text-muted-foreground'))
+      .find((element) => element.textContent === `${quickOpenHint} to search · ${newNoteHint} to create`)
+
+    expect(shortcutHint).toBeInTheDocument()
   })
 
   it('renders an invisible drag region in the empty state', () => {
@@ -207,6 +253,32 @@ describe('Editor', () => {
     })
 
     expect(screen.getByTestId('blocknote-view')).toBeInTheDocument()
+  })
+
+  it('passes the runtime CSP style nonce into BlockNote and TipTap', () => {
+    renderEditor({
+      tabs: [mockTab],
+      activeTabPath: mockEntry.path,
+    })
+
+    expect(blockNoteCreation.options.at(-1)).toMatchObject({
+      _tiptapOptions: {
+        injectNonce: RUNTIME_STYLE_NONCE,
+      },
+    })
+  })
+
+  it('disables native text assistance on the rich editor editable surface', () => {
+    renderEditor({
+      tabs: [mockTab],
+      activeTabPath: mockEntry.path,
+    })
+
+    const editable = screen.getByTestId('blocknote-editable')
+    expect(editable).toHaveAttribute('spellcheck', 'false')
+    expect(editable).toHaveAttribute('autocorrect', 'off')
+    expect(editable).toHaveAttribute('autocomplete', 'off')
+    expect(editable).toHaveAttribute('autocapitalize', 'off')
   })
 
   it('renders breadcrumb bar with action buttons', () => {
@@ -535,6 +607,53 @@ describe('raw-mode sync content guards', () => {
       '---\ntitle: Test Project\nis_a: Project\nStatus: Active\n---\n# Test Project\n\n![shot](attachments/shot.png)\n',
     )
     expect(rawLatestContentRef.current).toBe(result)
+  })
+
+  it('serializes rich math nodes back to Markdown source when entering raw mode', () => {
+    const rawLatestContentRef = { current: null as string | null }
+    const originalDocument = mockEditor.document
+    const originalSerializer = mockEditor.blocksToMarkdownLossy.getMockImplementation()
+
+    try {
+      mockEditor.document = [
+        {
+          id: 'math-inline',
+          type: 'paragraph',
+          content: [
+            { type: 'text', text: 'Inline ', styles: {} },
+            { type: 'mathInline', props: { latex: 'E=mc^2' } },
+          ],
+          props: {},
+          children: [],
+        },
+        {
+          id: 'math-block',
+          type: 'mathBlock',
+          props: { latex: '\\int_0^1 x\\,dx' },
+          children: [],
+        },
+      ]
+      mockEditor.blocksToMarkdownLossy.mockImplementation((blocks: unknown[]) => (
+        (blocks as Array<{ content?: Array<{ text?: string }> }>)
+          .map((block) => block.content?.map((item) => item.text ?? '').join('') ?? '')
+          .join('\n\n')
+      ))
+
+      const result = syncActiveTabIntoRawBuffer({
+        editor: mockEditor as never,
+        activeTabPath: mockEntry.path,
+        activeTabContent: mockContent,
+        rawLatestContentRef,
+      })
+
+      expect(result).toBe(
+        '---\ntitle: Test Project\nis_a: Project\nStatus: Active\n---\nInline $E=mc^2$\n\n$$\n\\int_0^1 x\\,dx\n$$\n',
+      )
+      expect(rawLatestContentRef.current).toBe(result)
+    } finally {
+      mockEditor.document = originalDocument
+      mockEditor.blocksToMarkdownLossy.mockImplementation(originalSerializer)
+    }
   })
 
   it('does not emit a content change when leaving raw mode without user edits', () => {

@@ -5,7 +5,7 @@ use std::path::PathBuf;
 const APP_CONFIG_DIR: &str = "com.tolaria.app";
 const LEGACY_APP_CONFIG_DIR: &str = "com.laputa.app";
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct Settings {
     pub auto_pull_interval_minutes: Option<u32>,
     pub autogit_enabled: Option<bool>,
@@ -17,6 +17,8 @@ pub struct Settings {
     pub analytics_enabled: Option<bool>,
     pub anonymous_id: Option<String>,
     pub release_channel: Option<String>,
+    pub theme_mode: Option<String>,
+    pub ui_language: Option<String>,
     pub initial_h1_auto_rename_enabled: Option<bool>,
     pub default_ai_agent: Option<String>,
 }
@@ -53,6 +55,41 @@ pub fn normalize_default_ai_agent(value: Option<&str>) -> Option<String> {
     }
 }
 
+pub fn normalize_theme_mode(value: Option<&str>) -> Option<String> {
+    match value.map(|candidate| candidate.trim().to_ascii_lowercase()) {
+        Some(mode) if mode == "light" || mode == "dark" => Some(mode),
+        _ => None,
+    }
+}
+
+fn canonical_language_code(value: &str) -> Option<String> {
+    let code = value.trim().replace('_', "-").to_ascii_lowercase();
+    if code.is_empty() {
+        None
+    } else {
+        Some(code)
+    }
+}
+
+fn is_english_language(code: &str) -> bool {
+    code == "en" || code.starts_with("en-")
+}
+
+fn is_simplified_chinese_language(code: &str) -> bool {
+    matches!(code, "zh" | "zh-cn" | "zh-hans" | "zh-sg")
+}
+
+pub fn normalize_ui_language(value: Option<&str>) -> Option<String> {
+    let language = canonical_language_code(value?)?;
+    if is_english_language(&language) {
+        return Some("en".to_string());
+    }
+    if is_simplified_chinese_language(&language) {
+        return Some("zh-Hans".to_string());
+    }
+    None
+}
+
 fn normalize_settings(settings: Settings) -> Settings {
     Settings {
         auto_pull_interval_minutes: settings.auto_pull_interval_minutes,
@@ -69,6 +106,8 @@ fn normalize_settings(settings: Settings) -> Settings {
         analytics_enabled: settings.analytics_enabled,
         anonymous_id: normalize_optional_string(settings.anonymous_id),
         release_channel: normalize_release_channel(settings.release_channel.as_deref()),
+        theme_mode: normalize_theme_mode(settings.theme_mode.as_deref()),
+        ui_language: normalize_ui_language(settings.ui_language.as_deref()),
         initial_h1_auto_rename_enabled: settings.initial_h1_auto_rename_enabled,
         default_ai_agent: normalize_default_ai_agent(settings.default_ai_agent.as_deref()),
     }
@@ -166,43 +205,8 @@ pub fn set_last_vault(vault_path: &str) -> Result<(), String> {
 mod tests {
     use super::*;
 
-    type SettingsSnapshot<'a> = (
-        Option<u32>,
-        Option<bool>,
-        Option<u32>,
-        Option<u32>,
-        Option<bool>,
-        Option<bool>,
-        Option<bool>,
-        Option<bool>,
-        Option<&'a str>,
-        Option<&'a str>,
-        Option<bool>,
-        Option<&'a str>,
-    );
-
-    fn settings_snapshot(settings: &Settings) -> SettingsSnapshot<'_> {
-        (
-            settings.auto_pull_interval_minutes,
-            settings.autogit_enabled,
-            settings.autogit_idle_threshold_seconds,
-            settings.autogit_inactive_threshold_seconds,
-            settings.auto_advance_inbox_after_organize,
-            settings.telemetry_consent,
-            settings.crash_reporting_enabled,
-            settings.analytics_enabled,
-            settings.anonymous_id.as_deref(),
-            settings.release_channel.as_deref(),
-            settings.initial_h1_auto_rename_enabled,
-            settings.default_ai_agent.as_deref(),
-        )
-    }
-
     fn assert_empty_settings(settings: &Settings) {
-        assert_eq!(
-            settings_snapshot(settings),
-            (None, None, None, None, None, None, None, None, None, None, None, None)
-        );
+        assert_eq!(settings, &Settings::default());
     }
 
     /// Helper: save settings to a temp file and reload them.
@@ -244,12 +248,14 @@ mod tests {
             analytics_enabled: Some(false),
             anonymous_id: Some("abc-123-uuid".to_string()),
             release_channel: Some("alpha".to_string()),
+            theme_mode: Some("dark".to_string()),
+            ui_language: Some("zh-Hans".to_string()),
             initial_h1_auto_rename_enabled: Some(false),
             default_ai_agent: Some("codex".to_string()),
         };
         let json = serde_json::to_string(&settings).unwrap();
         let parsed: Settings = serde_json::from_str(&json).unwrap();
-        assert_eq!(settings_snapshot(&parsed), settings_snapshot(&settings));
+        assert_eq!(parsed, settings);
     }
 
     #[test]
@@ -269,6 +275,8 @@ mod tests {
             autogit_inactive_threshold_seconds: Some(30),
             auto_advance_inbox_after_organize: Some(true),
             release_channel: Some("alpha".to_string()),
+            theme_mode: Some("dark".to_string()),
+            ui_language: Some("zh-Hans".to_string()),
             initial_h1_auto_rename_enabled: Some(false),
             default_ai_agent: Some("codex".to_string()),
             ..Default::default()
@@ -279,6 +287,8 @@ mod tests {
         assert_eq!(loaded.autogit_inactive_threshold_seconds, Some(30));
         assert_eq!(loaded.auto_advance_inbox_after_organize, Some(true));
         assert_eq!(loaded.release_channel.as_deref(), Some("alpha"));
+        assert_eq!(loaded.theme_mode.as_deref(), Some("dark"));
+        assert_eq!(loaded.ui_language.as_deref(), Some("zh-Hans"));
         assert_eq!(loaded.initial_h1_auto_rename_enabled, Some(false));
         assert_eq!(loaded.default_ai_agent.as_deref(), Some("codex"));
     }
@@ -288,11 +298,15 @@ mod tests {
         let loaded = save_and_reload(Settings {
             anonymous_id: Some("  test-uuid  ".to_string()),
             release_channel: Some("  alpha  ".to_string()),
+            theme_mode: Some("  dark  ".to_string()),
+            ui_language: Some("  zh-cn  ".to_string()),
             default_ai_agent: Some("  codex  ".to_string()),
             ..Default::default()
         });
         assert_eq!(loaded.anonymous_id.as_deref(), Some("test-uuid"));
         assert_eq!(loaded.release_channel.as_deref(), Some("alpha"));
+        assert_eq!(loaded.theme_mode.as_deref(), Some("dark"));
+        assert_eq!(loaded.ui_language.as_deref(), Some("zh-Hans"));
         assert_eq!(loaded.default_ai_agent.as_deref(), Some("codex"));
     }
 
@@ -332,6 +346,33 @@ mod tests {
             ..Default::default()
         });
         assert!(loaded.default_ai_agent.is_none());
+    }
+
+    #[test]
+    fn test_invalid_theme_mode_is_filtered() {
+        let loaded = save_and_reload(Settings {
+            theme_mode: Some("system".to_string()),
+            ..Default::default()
+        });
+        assert!(loaded.theme_mode.is_none());
+    }
+
+    #[test]
+    fn test_invalid_ui_language_is_filtered() {
+        let loaded = save_and_reload(Settings {
+            ui_language: Some("fr-FR".to_string()),
+            ..Default::default()
+        });
+        assert!(loaded.ui_language.is_none());
+    }
+
+    #[test]
+    fn test_ui_language_aliases_are_canonicalized() {
+        assert_eq!(normalize_ui_language(Some("en-US")).as_deref(), Some("en"));
+        assert_eq!(
+            normalize_ui_language(Some("zh_CN")).as_deref(),
+            Some("zh-Hans")
+        );
     }
 
     #[test]
@@ -384,21 +425,14 @@ mod tests {
             ..Default::default()
         });
         assert_eq!(
-            settings_snapshot(&loaded),
-            (
-                None,
-                None,
-                None,
-                None,
-                None,
-                Some(true),
-                Some(true),
-                Some(false),
-                Some("test-uuid-v4"),
-                None,
-                None,
-                None,
-            )
+            loaded,
+            Settings {
+                telemetry_consent: Some(true),
+                crash_reporting_enabled: Some(true),
+                analytics_enabled: Some(false),
+                anonymous_id: Some("test-uuid-v4".to_string()),
+                ..Default::default()
+            }
         );
     }
 

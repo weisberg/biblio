@@ -159,8 +159,11 @@ export function InlineWikilinkEditorField({
   dataTestId,
   editorClassName,
   onBeforeInput,
+  onCompositionEnd,
+  onCompositionStart,
   onInput,
   onKeyDown,
+  onDrop,
   onPaste,
   onSelectionChange,
   segments,
@@ -173,8 +176,11 @@ export function InlineWikilinkEditorField({
   dataTestId: string
   editorClassName?: string
   onBeforeInput: (event: React.FormEvent<HTMLDivElement>) => void
+  onCompositionEnd: () => void
+  onCompositionStart: () => void
   onInput: () => void
   onKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => void
+  onDrop: (event: React.DragEvent<HTMLDivElement>) => void
   onPaste: (event: React.ClipboardEvent<HTMLDivElement>) => void
   onSelectionChange: () => void
   segments: InlineWikilinkSegment[]
@@ -207,8 +213,11 @@ export function InlineWikilinkEditorField({
           editorClassName,
         )}
         onBeforeInput={onBeforeInput}
+        onCompositionEnd={onCompositionEnd}
+        onCompositionStart={onCompositionStart}
         onInput={onInput}
         onKeyDown={onKeyDown}
+        onDrop={onDrop}
         onPaste={onPaste}
         onClick={onSelectionChange}
         onKeyUp={onSelectionChange}

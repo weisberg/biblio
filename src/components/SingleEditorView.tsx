@@ -5,16 +5,29 @@ import {
   SuggestionMenuController,
   BlockNoteViewRaw,
   ComponentsContext,
+  DeleteLinkButton,
+  EditLinkButton,
+  LinkToolbar,
+  LinkToolbarController,
   SideMenuController,
+  useComponentsContext,
+  useDictionary,
+  type LinkToolbarProps,
 } from '@blocknote/react'
 import { components } from '@blocknote/mantine'
 import { MantineContext, MantineProvider } from '@mantine/core'
+import { ExternalLink } from 'lucide-react'
+import { useDocumentThemeMode } from '../hooks/useDocumentThemeMode'
 import { useEditorTheme } from '../hooks/useTheme'
 import { useImageDrop } from '../hooks/useImageDrop'
+import { useNoteWikilinkDrop } from '../hooks/useNoteWikilinkDrop'
 import { buildTypeEntryMap } from '../utils/typeColors'
 import { preFilterWikilinks, deduplicateByPath, MIN_QUERY_LENGTH } from '../utils/wikilinkSuggestions'
 import { filterPersonMentions, PERSON_MENTION_MIN_QUERY } from '../utils/personMentionSuggestions'
 import { attachClickHandlers, enrichSuggestionItems } from '../utils/suggestionEnrichment'
+import { openExternalUrl } from '../utils/url'
+import { observeNativeTextAssistanceDisabled } from '../lib/nativeTextAssistance'
+import { getRuntimeStyleNonce } from '../lib/runtimeStyleNonce'
 import { WikilinkSuggestionMenu, type WikilinkSuggestionItem } from './WikilinkSuggestionMenu'
 import type { VaultEntry } from '../types'
 import { _wikilinkEntriesRef } from './editorSchema'
@@ -26,12 +39,30 @@ import {
 } from './tolariaEditorFormatting'
 import { TolariaSideMenu } from './tolariaBlockNoteSideMenu'
 import { useEditorLinkActivation } from './useEditorLinkActivation'
+import { findNearestTextCursorBlock } from './blockNoteCursorTarget'
 
 const TEST_TABLE_MARKDOWN = `| Head 1 | Head 2 | Head 3 |
 | --- | --- | --- |
 | A | B | C |
 | D | E | F |
 `
+const CONTAINER_CLICK_IGNORE_SELECTOR = [
+  '[contenteditable="true"]',
+  '.bn-formatting-toolbar',
+  '.bn-link-toolbar',
+  '.bn-side-menu',
+  '.bn-form-popover',
+  '[role="menu"]',
+  '[role="dialog"]',
+].join(', ')
+const TOOLBAR_MOUSE_DOWN_ALLOW_SELECTOR = [
+  '[role="menu"]',
+  '[role="dialog"]',
+  'button[aria-haspopup]',
+  'input',
+  'textarea',
+  '[contenteditable="true"]',
+].join(', ')
 
 type TestTableBlock = {
   type?: string
@@ -61,10 +92,65 @@ function SharedContextBlockNoteView(props: React.ComponentProps<typeof BlockNote
     <MantineProvider
       // BlockNote scopes Mantine defaults under `.bn-mantine` instead of `:root`.
       withCssVariables={false}
+      getStyleNonce={getRuntimeStyleNonce}
       getRootElement={() => undefined}
     >
       {view}
     </MantineProvider>
+  )
+}
+
+function shouldAllowToolbarMouseDown(target: HTMLElement) {
+  return Boolean(target.closest(TOOLBAR_MOUSE_DOWN_ALLOW_SELECTOR))
+}
+
+function handleToolbarMouseDownCapture(
+  event: Pick<React.MouseEvent<HTMLElement>, 'target' | 'preventDefault'>,
+) {
+  if (!(event.target instanceof HTMLElement) || shouldAllowToolbarMouseDown(event.target)) {
+    return
+  }
+
+  event.preventDefault()
+}
+
+function TolariaOpenLinkButton({ url }: Pick<LinkToolbarProps, 'url'>) {
+  const Components = useComponentsContext()!
+  const dict = useDictionary()
+  const handleOpen = useCallback(() => {
+    void openExternalUrl(url).catch((error) => {
+      console.warn('[link] Failed to open URL from toolbar:', error)
+    })
+  }, [url])
+
+  return (
+    <Components.LinkToolbar.Button
+      className="bn-button"
+      label={dict.link_toolbar.open.tooltip}
+      mainTooltip={dict.link_toolbar.open.tooltip}
+      isSelected={false}
+      onClick={handleOpen}
+      icon={<ExternalLink size={16} />}
+    />
+  )
+}
+
+function TolariaLinkToolbar(props: LinkToolbarProps) {
+  return (
+    <LinkToolbar {...props}>
+      <EditLinkButton
+        url={props.url}
+        text={props.text}
+        range={props.range}
+        setToolbarOpen={props.setToolbarOpen}
+        setToolbarPositionFrozen={props.setToolbarPositionFrozen}
+      />
+      <TolariaOpenLinkButton url={props.url} />
+      <DeleteLinkButton
+        range={props.range}
+        setToolbarOpen={props.setToolbarOpen}
+      />
+    </LinkToolbar>
   )
 }
 
@@ -121,11 +207,7 @@ function useSeedBlockNoteTableBridge(editor: ReturnType<typeof useCreateBlockNot
 }
 
 function shouldIgnoreContainerClick(target: HTMLElement) {
-  return Boolean(
-    target.closest(
-      '[contenteditable="true"], .bn-formatting-toolbar, [role="menu"], [role="dialog"]',
-    ),
-  )
+  return Boolean(target.closest(CONTAINER_CLICK_IGNORE_SELECTOR))
 }
 
 function normalizeSuggestionQuery(query: string, triggerCharacter: string): string {
@@ -141,13 +223,22 @@ function isSelectionInsideElement(element: HTMLElement): boolean {
   return Boolean(anchorElement && element.contains(anchorElement))
 }
 
+const TITLE_HEADING_SELECTOR = 'h1, [data-content-type="heading"][data-level="1"], [data-content-type="heading"]:not([data-level])'
+const TITLE_HEADING_WRAPPER_SELECTOR = '.bn-block-outer, .bn-block'
+
+function findTitleHeadingElement(target: HTMLElement): HTMLElement | null {
+  const directHeading = target.closest<HTMLElement>(TITLE_HEADING_SELECTOR)
+  if (directHeading) return directHeading
+
+  const titleWrapper = target.closest<HTMLElement>(TITLE_HEADING_WRAPPER_SELECTOR)
+  return titleWrapper?.querySelector<HTMLElement>(TITLE_HEADING_SELECTOR) ?? null
+}
+
 function queueTitleHeadingCursorRepair(
   target: HTMLElement,
   editor: ReturnType<typeof useCreateBlockNote>,
 ): boolean {
-  const titleHeading = target.closest<HTMLElement>(
-    'h1, [data-content-type="heading"][data-level="1"], [data-content-type="heading"]:not([data-level])',
-  )
+  const titleHeading = findTitleHeadingElement(target)
   if (!titleHeading) return false
 
   queueMicrotask(() => {
@@ -156,7 +247,11 @@ function queueTitleHeadingCursorRepair(
     const firstBlock = editor.document[0]
     if (firstBlock?.type !== 'heading') return
 
-    editor.setTextCursorPosition(firstBlock.id, 'end')
+    try {
+      editor.setTextCursorPosition(firstBlock.id, 'end')
+    } catch {
+      return
+    }
     editor.focus()
   })
 
@@ -176,7 +271,14 @@ function useEditorContainerClickHandler(options: {
     if (shouldIgnoreContainerClick(target)) return
     const blocks = editor.document
     if (blocks.length > 0) {
-      editor.setTextCursorPosition(blocks[blocks.length - 1].id, 'end')
+      const targetBlock = findNearestTextCursorBlock(blocks, blocks.length - 1)
+      if (targetBlock) {
+        try {
+          editor.setTextCursorPosition(targetBlock.id, 'end')
+        } catch {
+          // Ignore transient BlockNote selection errors and at least restore focus.
+        }
+      }
     }
     editor.focus()
   }, [editor, editable])
@@ -322,6 +424,7 @@ export function SingleEditorView({ editor, entries, onNavigateWikilink, onChange
   editable?: boolean
 }) {
   const { cssVars } = useEditorTheme()
+  const themeMode = useDocumentThemeMode()
   const containerRef = useRef<HTMLDivElement>(null)
   const handleContainerClick = useEditorContainerClickHandler({ editable, editor })
   const handleEditorChange = useCompositionAwareEditorChange({ containerRef, onChange })
@@ -334,11 +437,18 @@ export function SingleEditorView({ editor, entries, onNavigateWikilink, onChange
     _wikilinkEntriesRef.current = entries
   }, [entries])
 
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+    return observeNativeTextAssistanceDisabled(container)
+  }, [])
+
   useSeedBlockNoteTableBridge(editor)
 
   const typeEntryMap = useMemo(() => buildTypeEntryMap(entries), [entries])
   const baseItems = useMemo(() => buildBaseSuggestionItems(entries), [entries])
   const insertWikilink = useInsertWikilink(editor)
+  useNoteWikilinkDrop({ containerRef, onInsertTarget: insertWikilink, vaultPath })
   const {
     getWikilinkItems,
     getPersonMentionItems,
@@ -360,10 +470,11 @@ export function SingleEditorView({ editor, entries, onNavigateWikilink, onChange
       )}
       <SharedContextBlockNoteView
         editor={editor}
-        theme="light"
+        theme={themeMode}
         onChange={handleEditorChange}
         editable={editable}
         formattingToolbar={false}
+        linkToolbar={false}
         slashMenu={false}
         sideMenu={false}
       >
@@ -372,17 +483,15 @@ export function SingleEditorView({ editor, entries, onNavigateWikilink, onChange
           formattingToolbar={TolariaFormattingToolbar}
           floatingUIOptions={{
             elementProps: {
-              onMouseDownCapture: (event) => {
-                const target = event.target as HTMLElement
-                if (
-                  target.closest(
-                    '[role="menu"], [role="dialog"], button[aria-haspopup]',
-                  )
-                ) {
-                  return
-                }
-                event.preventDefault()
-              },
+              onMouseDownCapture: handleToolbarMouseDownCapture,
+            },
+          }}
+        />
+        <LinkToolbarController
+          linkToolbar={TolariaLinkToolbar}
+          floatingUIOptions={{
+            elementProps: {
+              onMouseDownCapture: handleToolbarMouseDownCapture,
             },
           }}
         />

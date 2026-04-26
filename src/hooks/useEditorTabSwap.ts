@@ -3,6 +3,7 @@ import type { useCreateBlockNote } from '@blocknote/react'
 import type { VaultEntry } from '../types'
 import { splitFrontmatter, preProcessWikilinks, injectWikilinks, restoreWikilinksInBlocks } from '../utils/wikilinks'
 import { compactMarkdown } from '../utils/compact-markdown'
+import { injectMathInBlocks, preProcessMathMarkdown, serializeMathAwareBlocks } from '../utils/mathMarkdown'
 import { failNoteOpenTrace, finishNoteOpenTrace } from '../utils/noteOpenPerformance'
 import { resolveImageUrls, portableImageUrls } from '../utils/vaultImages'
 import {
@@ -13,6 +14,7 @@ import {
   pathStem,
   slugifyPathStem,
 } from './editorTabContent'
+import { clearEditorDomSelection, EDITOR_CONTAINER_SELECTOR } from './editorDomSelection'
 export { extractEditorBody, getH1TextFromBlocks, replaceTitleInFrontmatter } from './editorTabContent'
 
 interface Tab {
@@ -53,7 +55,7 @@ function signalEditorTabSwapped(path: string): void {
 }
 
 function readEditorScrollTop(): number {
-  const scrollEl = document.querySelector('.editor__blocknote-container')
+  const scrollEl = document.querySelector(EDITOR_CONTAINER_SELECTOR)
   return scrollEl?.scrollTop ?? 0
 }
 
@@ -147,7 +149,7 @@ async function resolveBlocksForTarget(
 
   const body = extractEditorBody(content)
   const withImages = vaultPath ? resolveImageUrls(body, vaultPath) : body
-  const preprocessed = preProcessWikilinks(withImages)
+  const preprocessed = preProcessMathMarkdown({ markdown: preProcessWikilinks(withImages) })
   const fastPathBlocks = buildFastPathBlocks({ preprocessed })
   if (fastPathBlocks) {
     const nextState = { blocks: fastPathBlocks, scrollTop: 0, sourceContent: content }
@@ -157,7 +159,8 @@ async function resolveBlocksForTarget(
 
   const parsed = normalizeParsedImageBlocks(await parseMarkdownBlocks(editor, preprocessed)) as EditorBlocks
   const withWikilinks = injectWikilinks(parsed)
-  const nextState = { blocks: withWikilinks, scrollTop: 0, sourceContent: content }
+  const withMath = injectMathInBlocks(withWikilinks)
+  const nextState = { blocks: withMath, scrollTop: 0, sourceContent: content }
   cacheEditorState(cache, targetPath, nextState)
   return nextState
 }
@@ -189,7 +192,7 @@ function applyBlocksToEditor(
   }
 
   requestAnimationFrame(() => {
-    const scrollEl = document.querySelector('.editor__blocknote-container')
+    const scrollEl = document.querySelector(EDITOR_CONTAINER_SELECTOR)
     if (scrollEl) scrollEl.scrollTop = scrollTop
   })
 }
@@ -209,7 +212,7 @@ function applyBlankStateToEditor(
 
   queueMicrotask(() => { suppressChangeRef.current = false })
   requestAnimationFrame(() => {
-    const scrollEl = document.querySelector('.editor__blocknote-container')
+    const scrollEl = document.querySelector(EDITOR_CONTAINER_SELECTOR)
     if (scrollEl) scrollEl.scrollTop = 0
   })
 }
@@ -230,7 +233,7 @@ function applyHtmlStateToEditor(
 
   queueMicrotask(() => { suppressChangeRef.current = false })
   requestAnimationFrame(() => {
-    const scrollEl = document.querySelector('.editor__blocknote-container')
+    const scrollEl = document.querySelector(EDITOR_CONTAINER_SELECTOR)
     if (scrollEl) scrollEl.scrollTop = 0
   })
 }
@@ -246,10 +249,11 @@ async function resolveEmptyHeadingHtml(
 
   const withImages = vaultPath ? resolveImageUrls(remainder, vaultPath) : remainder
   const parsed = normalizeParsedImageBlocks(
-    await parseMarkdownBlocks(editor, preProcessWikilinks(withImages)),
+    await parseMarkdownBlocks(editor, preProcessMathMarkdown({ markdown: preProcessWikilinks(withImages) })),
   ) as EditorBlocks
   const withWikilinks = injectWikilinks(parsed)
-  return `<h1></h1>${editor.blocksToHTMLLossy(withWikilinks as typeof parsed)}`
+  const withMath = injectMathInBlocks(withWikilinks)
+  return `<h1></h1>${editor.blocksToHTMLLossy(withMath as typeof parsed)}`
 }
 
 function findActiveTab(options: {
@@ -264,7 +268,7 @@ function findActiveTab(options: {
 
 function serializeEditorBody(editor: ReturnType<typeof useCreateBlockNote>): string {
   const restored = restoreWikilinksInBlocks(editor.document)
-  return compactMarkdown(editor.blocksToMarkdownLossy(restored as typeof editor.document))
+  return compactMarkdown(serializeMathAwareBlocks(editor, restored))
 }
 
 function normalizeTabBody(options: { content: string }): string {
@@ -814,6 +818,7 @@ function scheduleTabSwap(options: {
   cache: Map<string, CachedTabState>
   targetPath: string
   activeTab: Tab
+  clearDomSelection: boolean
   pendingSwapRef: MutableRefObject<(() => void) | null>
   prevActivePathRef: MutableRefObject<string | null>
   rawSwapPendingRef: MutableRefObject<boolean>
@@ -825,6 +830,7 @@ function scheduleTabSwap(options: {
     cache,
     targetPath,
     activeTab,
+    clearDomSelection,
     pendingSwapRef,
     prevActivePathRef,
     rawSwapPendingRef,
@@ -837,6 +843,7 @@ function scheduleTabSwap(options: {
   const doSwap = () => {
     if (clearStaleSwap({ targetPath, prevActivePathRef, suppressChangeRef })) return
     rawSwapPendingRef.current = false
+    if (clearDomSelection) clearEditorDomSelection()
 
     if (isBlankBodyContent({ content: activeTab.content })) {
       applyBlankTabState({
@@ -1014,6 +1021,7 @@ function runTabSwapEffect(options: {
     cache: state.cache,
     targetPath: activeTabPath,
     activeTab: state.activeTab,
+    clearDomSelection: state.pathChanged,
     pendingSwapRef,
     prevActivePathRef,
     rawSwapPendingRef,

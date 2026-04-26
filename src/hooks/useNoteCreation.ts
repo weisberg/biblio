@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import { invoke } from '@tauri-apps/api/core'
 import { isTauri, addMockEntry } from '../mock-tauri'
 import type { VaultEntry } from '../types'
+import { slugifyNoteStem as slugify } from '../utils/noteSlug'
 import { resolveEntry } from '../utils/wikilink'
 import { trackEvent } from '../lib/telemetry'
 
@@ -24,15 +25,7 @@ export function buildNewEntry({ path, slug, title, type, status }: NewEntryParam
   }
 }
 
-export function slugify(text: string): string {
-  const result = text
-    .normalize('NFKC')
-    .toLocaleLowerCase()
-    .trim()
-    .replace(/[^\p{Letter}\p{Number}]+/gu, '-')
-    .replace(/(^-|-$)/g, '')
-  return result || 'untitled'
-}
+export { slugify }
 
 /** Convert a filename slug to a human-readable title (hyphens → spaces, title case). */
 function slug_to_title(slug: string): string {
@@ -550,28 +543,21 @@ export function useNoteCreation(config: NoteCreationConfig, tabDeps: CreationTab
     }
   }, [openTabWithContent, addEntry, addPendingSave, removePendingSave, config.onNewNotePersisted, removeEntry])
 
-  const creationDeps = {
-    entries,
-    vaultPath,
-    setToastMessage,
-    persistResolvedEntry,
-  }
-
   const handleCreateNote = useCallback((title: string, type: string): Promise<boolean> =>
-    createNamedNote({ ...creationDeps, title, type, creationPath: 'plus_button' }),
-  [creationDeps])
+    createNamedNote({ entries, vaultPath, setToastMessage, persistResolvedEntry, title, type, creationPath: 'plus_button' }),
+  [entries, vaultPath, setToastMessage, persistResolvedEntry])
 
   const handleCreateType = useCallback((typeName: string): Promise<boolean> =>
-    createTypeFromName({ ...creationDeps, typeName }),
-  [creationDeps])
+    createTypeFromName({ entries, vaultPath, setToastMessage, persistResolvedEntry, typeName }),
+  [entries, vaultPath, setToastMessage, persistResolvedEntry])
 
   const createTypeEntrySilent = useCallback((typeName: string): Promise<VaultEntry> =>
-    createTypeSilently({ ...creationDeps, typeName }),
-  [creationDeps])
+    createTypeSilently({ entries, vaultPath, setToastMessage, persistResolvedEntry, typeName }),
+  [entries, vaultPath, setToastMessage, persistResolvedEntry])
 
   const handleCreateNoteForRelationship = useCallback((title: string): Promise<boolean> =>
-    createNamedNote({ ...creationDeps, title, type: 'Note' }),
-  [creationDeps])
+    createNamedNote({ entries, vaultPath, setToastMessage, persistResolvedEntry, title, type: 'Note' }),
+  [entries, vaultPath, setToastMessage, persistResolvedEntry])
 
   const handleCreateNoteImmediate = useImmediateCreateQueue({
     entries,

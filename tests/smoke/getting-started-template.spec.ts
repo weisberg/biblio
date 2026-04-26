@@ -8,6 +8,7 @@ test('Getting Started template shows inline retry on clone failure and opens aft
 
     let ref: Record<string, unknown> | null = null
     let cloneAttempts = 0
+    let cloneSucceeded = false
 
     Object.defineProperty(window, '__mockHandlers', {
       configurable: true,
@@ -19,7 +20,9 @@ test('Getting Started template shows inline retry on clone failure and opens aft
           hidden_defaults: [],
         })
         ref.get_default_vault_path = () => '/Users/mock/Documents/Getting Started'
-        ref.check_vault_exists = () => false
+        ref.check_vault_exists = (args?: { path?: string }) => args?.path === '/Users/mock/Documents/Getting Started'
+          ? cloneSucceeded
+          : false
         ref.create_getting_started_vault = (args: { targetPath?: string | null }) => {
           cloneAttempts += 1
           if (cloneAttempts === 1) {
@@ -28,6 +31,7 @@ test('Getting Started template shows inline retry on clone failure and opens aft
           if (args.targetPath !== '/Users/mock/Documents/Getting Started') {
             throw new Error(`Unexpected Getting Started target: ${args.targetPath}`)
           }
+          cloneSucceeded = true
           return args.targetPath
         }
       },
@@ -49,7 +53,7 @@ test('Getting Started template shows inline retry on clone failure and opens aft
   await page.getByTestId('welcome-create-vault').click()
 
   await expect(page.getByTestId('welcome-error')).toContainText(
-    'Could not download Getting Started vault. Check your connection and try again.',
+    'Could not download Getting Started vault: git clone failed: fatal: unable to access',
   )
   await expect(page.getByTestId('welcome-retry-template')).toBeVisible()
 

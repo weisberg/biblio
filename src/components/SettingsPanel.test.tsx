@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { SettingsPanel } from './SettingsPanel'
 import type { Settings } from '../types'
+import { THEME_MODE_STORAGE_KEY } from '../lib/themeMode'
 
 const emptySettings: Settings = {
   auto_pull_interval_minutes: null,
@@ -14,6 +15,8 @@ const emptySettings: Settings = {
   analytics_enabled: null,
   anonymous_id: null,
   release_channel: null,
+  theme_mode: null,
+  ui_language: null,
 }
 
 function installPointerCapturePolyfill() {
@@ -28,12 +31,27 @@ function installPointerCapturePolyfill() {
   }
 }
 
+function createStorageMock(): Storage {
+  const values = new Map<string, string>()
+  return {
+    get length() { return values.size },
+    clear: vi.fn(() => { values.clear() }),
+    getItem: vi.fn((key: string) => values.get(key) ?? null),
+    key: vi.fn((index: number) => Array.from(values.keys())[index] ?? null),
+    removeItem: vi.fn((key: string) => { values.delete(key) }),
+    setItem: vi.fn((key: string, value: string) => { values.set(key, value) }),
+  }
+}
+
 describe('SettingsPanel', () => {
   const onSave = vi.fn()
   const onClose = vi.fn()
+  const localStorageMock = createStorageMock()
 
   beforeEach(() => {
     vi.clearAllMocks()
+    Object.defineProperty(window, 'localStorage', { value: localStorageMock, configurable: true })
+    window.localStorage.clear()
     installPointerCapturePolyfill()
   })
 
@@ -52,6 +70,24 @@ describe('SettingsPanel', () => {
     expect(screen.getByText('Sync & Updates')).toBeInTheDocument()
   })
 
+  it('updates the draft language when stored settings finish loading', () => {
+    const { rerender } = render(
+      <SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />
+    )
+
+    rerender(
+      <SettingsPanel
+        open={true}
+        settings={{ ...emptySettings, ui_language: 'zh-Hans' }}
+        onSave={onSave}
+        onClose={onClose}
+      />
+    )
+
+    expect(screen.getByText('设置')).toBeInTheDocument()
+    expect(screen.queryByText('Settings')).not.toBeInTheDocument()
+  })
+
   it('calls onSave with stable defaults on save', () => {
     render(
       <SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />
@@ -65,8 +101,105 @@ describe('SettingsPanel', () => {
       autogit_idle_threshold_seconds: 90,
       autogit_inactive_threshold_seconds: 30,
       release_channel: null,
+      theme_mode: 'light',
     }))
     expect(onClose).toHaveBeenCalled()
+  })
+
+  it('defaults the color mode control to light', () => {
+    render(
+      <SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />
+    )
+
+    expect(screen.getByTestId('settings-theme-mode')).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: 'Light' })).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByRole('radio', { name: 'Dark' })).toHaveAttribute('aria-checked', 'false')
+  })
+
+  it('defaults the language selector to system language', () => {
+    render(
+      <SettingsPanel
+        open={true}
+        settings={emptySettings}
+        locale="en"
+        systemLocale="zh-Hans"
+        onSave={onSave}
+        onClose={onClose}
+      />
+    )
+
+    expect(screen.getByTestId('settings-ui-language')).toHaveAttribute('data-value', 'system')
+    expect(screen.getByText('系统（简体中文）')).toBeInTheDocument()
+  })
+
+  it('keeps the language selector keyboard accessible', () => {
+    render(
+      <SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />
+    )
+
+    const trigger = screen.getByTestId('settings-ui-language')
+    trigger.focus()
+    fireEvent.keyDown(trigger, { key: 'ArrowDown', code: 'ArrowDown' })
+
+    expect(screen.getByRole('option', { name: 'Simplified Chinese' })).toBeInTheDocument()
+  })
+
+  it('saves the selected UI language and updates visible settings text', () => {
+    render(
+      <SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />
+    )
+
+    fireEvent.pointerDown(screen.getByTestId('settings-ui-language'), { button: 0, pointerType: 'mouse' })
+    fireEvent.click(screen.getByRole('option', { name: 'Simplified Chinese' }))
+
+    expect(screen.getByText('设置')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId('settings-save'))
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
+      ui_language: 'zh-Hans',
+    }))
+  })
+
+  it('uses the stored color mode mirror when settings have no saved mode', () => {
+    window.localStorage.setItem(THEME_MODE_STORAGE_KEY, 'dark')
+
+    render(
+      <SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />
+    )
+
+    expect(screen.getByRole('radio', { name: 'Dark' })).toHaveAttribute('aria-checked', 'true')
+  })
+
+  it('saves the selected dark color mode', () => {
+    render(
+      <SettingsPanel open={true} settings={emptySettings} onSave={onSave} onClose={onClose} />
+    )
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Dark' }))
+    fireEvent.click(screen.getByTestId('settings-save'))
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
+      theme_mode: 'dark',
+    }))
+  })
+
+  it('preserves a saved dark color mode until changed', () => {
+    render(
+      <SettingsPanel
+        open={true}
+        settings={{ ...emptySettings, theme_mode: 'dark' }}
+        onSave={onSave}
+        onClose={onClose}
+      />
+    )
+
+    expect(screen.getByRole('radio', { name: 'Dark' })).toHaveAttribute('aria-checked', 'true')
+    fireEvent.click(screen.getByTestId('settings-save'))
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
+      theme_mode: 'dark',
+    }))
   })
 
   it('defaults the release channel trigger to stable', () => {

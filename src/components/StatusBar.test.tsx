@@ -21,6 +21,36 @@ const installedAiAgentsStatus = {
   codex: { status: 'installed' as const, version: '0.37.0' },
 }
 
+const DEFAULT_WINDOW_WIDTH = 1280
+
+function setWindowWidth(width: number) {
+  Object.defineProperty(window, 'innerWidth', {
+    configurable: true,
+    writable: true,
+    value: width,
+  })
+}
+
+function renderDenseStatusBar() {
+  return render(
+    <StatusBar
+      noteCount={100}
+      modifiedCount={5}
+      vaultPath="/Users/luca/Laputa"
+      vaults={vaults}
+      onSwitchVault={vi.fn()}
+      remoteStatus={{ branch: 'main', ahead: 0, behind: 0, hasRemote: false }}
+      onCommitPush={vi.fn()}
+      onClickPulse={vi.fn()}
+      onOpenFeedback={vi.fn()}
+      buildNumber="b281"
+      onCheckForUpdates={vi.fn()}
+      mcpStatus="not_installed"
+      claudeCodeStatus="missing"
+    />
+  )
+}
+
 async function expectTooltip(trigger: HTMLElement, ...parts: string[]) {
   act(() => {
     fireEvent.focus(trigger)
@@ -37,6 +67,7 @@ async function expectTooltip(trigger: HTMLElement, ...parts: string[]) {
 describe('StatusBar', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    setWindowWidth(DEFAULT_WINDOW_WIDTH)
   })
 
   it('does not display the bottom-bar note count readout', () => {
@@ -71,17 +102,50 @@ describe('StatusBar', () => {
     expect(screen.queryByText('main')).not.toBeInTheDocument()
   })
 
-  it('shows Feedback button when callback is provided', () => {
+  it('shows Contribute button when callback is provided', () => {
     render(<StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} onOpenFeedback={vi.fn()} />)
     expect(screen.getByTestId('status-feedback')).toBeInTheDocument()
-    expect(screen.getByText('Feedback')).toBeInTheDocument()
+    expect(screen.getByText('Contribute')).toBeInTheDocument()
   })
 
-  it('calls onOpenFeedback when Feedback is clicked', () => {
+  it('calls onOpenFeedback when Contribute is clicked', () => {
     const onOpenFeedback = vi.fn()
     render(<StatusBar noteCount={100} vaultPath="/Users/luca/Laputa" vaults={vaults} onSwitchVault={vi.fn()} onOpenFeedback={onOpenFeedback} />)
     fireEvent.click(screen.getByTestId('status-feedback'))
     expect(onOpenFeedback).toHaveBeenCalledOnce()
+  })
+
+  it('shows a theme toggle instead of the notifications placeholder', () => {
+    render(
+      <StatusBar
+        noteCount={100}
+        vaultPath="/Users/luca/Laputa"
+        vaults={vaults}
+        onSwitchVault={vi.fn()}
+        themeMode="light"
+        onToggleThemeMode={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByTestId('status-theme-mode')).toHaveAccessibleName('Switch to dark mode')
+    expect(screen.queryByLabelText('Notifications are coming soon')).not.toBeInTheDocument()
+  })
+
+  it('calls onToggleThemeMode from the bottom bar', () => {
+    const onToggleThemeMode = vi.fn()
+    render(
+      <StatusBar
+        noteCount={100}
+        vaultPath="/Users/luca/Laputa"
+        vaults={vaults}
+        onSwitchVault={vi.fn()}
+        themeMode="dark"
+        onToggleThemeMode={onToggleThemeMode}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Switch to light mode' }))
+    expect(onToggleThemeMode).toHaveBeenCalledOnce()
   })
 
   it('displays active vault name', () => {
@@ -273,6 +337,61 @@ describe('StatusBar', () => {
     expect(screen.getByTestId('status-modified-count')).toBeInTheDocument()
     expect(screen.getByText('Changes')).toBeInTheDocument()
     expect(screen.getByText('3')).toBeInTheDocument()
+  })
+
+  it('keeps the bottom bar compact and unwrapped at medium widths', () => {
+    setWindowWidth(980)
+    renderDenseStatusBar()
+
+    expect(screen.getByTestId('status-bar')).toHaveStyle({
+      flexWrap: 'nowrap',
+      height: '30px',
+    })
+    expect(screen.getByTestId('status-commit-push')).toBeInTheDocument()
+    expect(screen.getByTestId('status-pulse')).toBeInTheDocument()
+    expect(screen.getByTestId('status-feedback')).toBeInTheDocument()
+    expect(screen.queryByText('Commit')).not.toBeInTheDocument()
+    expect(screen.queryByText('History')).not.toBeInTheDocument()
+    expect(screen.queryByText('Contribute')).not.toBeInTheDocument()
+  })
+
+  it('collapses status labels to icon-first controls at very narrow widths', () => {
+    setWindowWidth(880)
+    renderDenseStatusBar()
+
+    expect(screen.getByTestId('status-bar')).toHaveStyle({
+      flexWrap: 'nowrap',
+      height: '30px',
+    })
+    expect(screen.getByTestId('status-commit-push')).toBeInTheDocument()
+    expect(screen.getByTestId('status-pulse')).toBeInTheDocument()
+    expect(screen.getByTestId('status-feedback')).toBeInTheDocument()
+    expect(screen.getByTestId('status-build-number')).toBeInTheDocument()
+    expect(screen.getByTestId('status-claude-code')).toBeInTheDocument()
+    expect(screen.queryByText('Commit')).not.toBeInTheDocument()
+    expect(screen.queryByText('History')).not.toBeInTheDocument()
+    expect(screen.queryByText('Contribute')).not.toBeInTheDocument()
+    expect(screen.queryByText('No remote')).not.toBeInTheDocument()
+    expect(screen.queryByText('MCP')).not.toBeInTheDocument()
+    expect(screen.queryByText('b281')).not.toBeInTheDocument()
+    expect(screen.queryByText('Claude Code missing')).not.toBeInTheDocument()
+  })
+
+  it('hides the active AI agent label in compact status layout', () => {
+    setWindowWidth(880)
+    render(
+      <StatusBar
+        noteCount={100}
+        vaultPath="/Users/luca/Laputa"
+        vaults={vaults}
+        onSwitchVault={vi.fn()}
+        aiAgentsStatus={installedAiAgentsStatus}
+        defaultAiAgent="claude_code"
+      />
+    )
+
+    expect(screen.getByTestId('status-ai-agents')).toBeInTheDocument()
+    expect(screen.queryByText('Claude')).not.toBeInTheDocument()
   })
 
   it('does not show Changes badge when modifiedCount is 0', () => {

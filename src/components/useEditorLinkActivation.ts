@@ -1,5 +1,5 @@
 import { useEffect, type RefObject } from 'react'
-import { isUrlValue, normalizeUrl, openExternalUrl } from '../utils/url'
+import { normalizeExternalUrl, openExternalUrl } from '../utils/url'
 
 const CODE_CONTEXT_SELECTOR = '[data-content-type="codeBlock"], pre, code'
 
@@ -15,15 +15,66 @@ function resolveWikilinkTarget(target: HTMLElement) {
   return target.closest<HTMLElement>('.wikilink[data-target]')?.dataset.target ?? null
 }
 
-function resolveUrlTarget(target: HTMLElement) {
-  const href = target.closest<HTMLAnchorElement>('a[href]')?.getAttribute('href')?.trim()
-  if (!href || !isUrlValue(href)) return null
-  return normalizeUrl(href)
+function resolveAnchorHref(target: HTMLElement) {
+  return target.closest<HTMLAnchorElement>('a[href]')?.getAttribute('href')?.trim() ?? null
+}
+
+function blurActiveEditable(container: HTMLElement) {
+  const active = document.activeElement
+  if (!(active instanceof HTMLElement) || !container.contains(active)) return
+  const editable = active.isContentEditable ? active : active.closest<HTMLElement>('[contenteditable="true"]')
+  editable?.blur()
 }
 
 function setFollowLinksActive(container: HTMLElement, active: boolean) {
   if (active) container.setAttribute('data-follow-links', '')
   else container.removeAttribute('data-follow-links')
+}
+
+function consumeEditorLinkClick(event: MouseEvent) {
+  event.preventDefault()
+  event.stopPropagation()
+}
+
+function activateWikilink(
+  event: MouseEvent,
+  container: HTMLElement,
+  target: string,
+  onNavigateWikilink: (target: string) => void,
+) {
+  if (!hasFollowModifier(event)) return
+
+  consumeEditorLinkClick(event)
+  blurActiveEditable(container)
+  onNavigateWikilink(target)
+}
+
+function activateExternalUrl(event: MouseEvent, href: string) {
+  consumeEditorLinkClick(event)
+
+  if (!hasFollowModifier(event)) return
+
+  const urlTarget = normalizeExternalUrl(href)
+  if (!urlTarget) return
+
+  openExternalUrl(urlTarget).catch((err) => console.warn('[link] Failed to open URL:', err))
+}
+
+function handleEditorLinkClick(
+  event: MouseEvent,
+  container: HTMLElement,
+  onNavigateWikilink: (target: string) => void,
+) {
+  if (!(event.target instanceof HTMLElement) || isInsideCodeContext(event.target)) return
+
+  const wikilinkTarget = resolveWikilinkTarget(event.target)
+  if (wikilinkTarget) {
+    activateWikilink(event, container, wikilinkTarget, onNavigateWikilink)
+    return
+  }
+
+  const href = resolveAnchorHref(event.target)
+  if (href) activateExternalUrl(event, href)
 }
 
 export function useEditorLinkActivation(
@@ -42,23 +93,7 @@ export function useEditorLinkActivation(
       if (document.visibilityState !== 'visible') resetModifierState()
     }
     const handleClick = (event: MouseEvent) => {
-      if (!hasFollowModifier(event)) return
-      if (!(event.target instanceof HTMLElement) || isInsideCodeContext(event.target)) return
-
-      const wikilinkTarget = resolveWikilinkTarget(event.target)
-      if (wikilinkTarget) {
-        event.preventDefault()
-        event.stopPropagation()
-        onNavigateWikilink(wikilinkTarget)
-        return
-      }
-
-      const urlTarget = resolveUrlTarget(event.target)
-      if (!urlTarget) return
-
-      event.preventDefault()
-      event.stopPropagation()
-      openExternalUrl(urlTarget).catch(() => {})
+      handleEditorLinkClick(event, container, onNavigateWikilink)
     }
 
     container.addEventListener('click', handleClick, true)

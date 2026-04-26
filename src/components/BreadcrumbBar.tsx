@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react'
-import type { VaultEntry } from '../types'
+import type { NoteLayout, VaultEntry } from '../types'
 import { cn } from '@/lib/utils'
+import { formatShortcutDisplay } from '../hooks/appCommandCatalog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ActionTooltip, type ActionTooltipCopy } from '@/components/ui/action-tooltip'
@@ -16,6 +17,8 @@ import {
   Star,
   CheckCircle,
   ArrowsClockwise,
+  TextAlignCenter,
+  TextAlignLeft,
 } from '@phosphor-icons/react'
 import { NoteTitleIcon } from './NoteTitleIcon'
 import { slugify } from '../hooks/useNoteCreation'
@@ -42,6 +45,8 @@ interface BreadcrumbBarProps {
   onArchive?: () => void
   onUnarchive?: () => void
   onRenameFilename?: (path: string, newFilenameStem: string) => void
+  noteLayout?: NoteLayout
+  onToggleNoteLayout?: () => void
   /** Ref for direct DOM manipulation — avoids re-render on scroll. */
   barRef?: React.Ref<HTMLDivElement>
 }
@@ -130,35 +135,91 @@ function IconActionButton({
   )
 }
 
-function RawToggleButton({ rawMode, onToggleRaw }: { rawMode?: boolean; onToggleRaw?: () => void }) {
-  const copy: ActionTooltipCopy = {
-    label: rawMode ? 'Return to the editor' : 'Open the raw editor',
-    shortcut: '⌘\\',
-  }
+interface ToggleIconActionProps {
+  active: boolean
+  activeClassName: string
+  activeLabel: string
+  children: ReactNode
+  inactiveClassName?: string
+  inactiveLabel: string
+  onClick?: () => void
+  shortcut: string
+}
+
+function ToggleIconAction({
+  active,
+  activeClassName,
+  activeLabel,
+  children,
+  inactiveClassName = 'hover:text-foreground',
+  inactiveLabel,
+  onClick,
+  shortcut,
+}: ToggleIconActionProps) {
   return (
     <IconActionButton
-      copy={copy}
+      copy={{
+        label: active ? activeLabel : inactiveLabel,
+        shortcut,
+      }}
+      onClick={onClick}
+      className={cn(active ? activeClassName : inactiveClassName)}
+    >
+      {children}
+    </IconActionButton>
+  )
+}
+
+function RawToggleButton({ rawMode, onToggleRaw }: { rawMode?: boolean; onToggleRaw?: () => void }) {
+  return (
+    <ToggleIconAction
+      active={!!rawMode}
+      activeClassName="text-foreground"
+      activeLabel="Return to the editor"
+      inactiveLabel="Open the raw editor"
       onClick={onToggleRaw}
-      className={cn(rawMode ? 'text-foreground' : 'hover:text-foreground')}
+      shortcut={formatShortcutDisplay({ display: '⌘\\' })}
     >
       <Code size={16} className={BREADCRUMB_ICON_CLASS} />
+    </ToggleIconAction>
+  )
+}
+
+function NoteLayoutAction({
+  noteLayout = 'centered',
+  onToggleNoteLayout,
+}: {
+  noteLayout?: NoteLayout
+  onToggleNoteLayout?: () => void
+}) {
+  if (!onToggleNoteLayout) return null
+
+  const isLeftAligned = noteLayout === 'left'
+  return (
+    <IconActionButton
+      copy={{ label: isLeftAligned ? 'Switch to centered note layout' : 'Switch to left-aligned note layout' }}
+      onClick={onToggleNoteLayout}
+      className={cn(isLeftAligned ? 'text-foreground' : 'hover:text-foreground')}
+    >
+      {isLeftAligned
+        ? <TextAlignLeft size={16} className={BREADCRUMB_ICON_CLASS} />
+        : <TextAlignCenter size={16} className={BREADCRUMB_ICON_CLASS} />}
     </IconActionButton>
   )
 }
 
 function FavoriteAction({ favorite, onToggleFavorite }: { favorite: boolean; onToggleFavorite?: () => void }) {
-  const copy: ActionTooltipCopy = {
-    label: favorite ? 'Remove from favorites' : 'Add to favorites',
-    shortcut: '⌘D',
-  }
   return (
-    <IconActionButton
-      copy={copy}
+    <ToggleIconAction
+      active={favorite}
+      activeClassName="text-[var(--accent-yellow)]"
+      activeLabel="Remove from favorites"
+      inactiveLabel="Add to favorites"
       onClick={onToggleFavorite}
-      className={cn(favorite ? 'text-yellow-500' : 'hover:text-foreground')}
+      shortcut={formatShortcutDisplay({ display: '⌘D' })}
     >
       <Star size={16} weight={favorite ? 'fill' : 'regular'} className={BREADCRUMB_ICON_CLASS} />
-    </IconActionButton>
+    </ToggleIconAction>
   )
 }
 
@@ -170,18 +231,17 @@ function OrganizedAction({
   onToggleOrganized?: () => void
 }) {
   if (!onToggleOrganized) return null
-  const copy: ActionTooltipCopy = {
-    label: organized ? 'Set note as not organized' : 'Set note as organized',
-    shortcut: '⌘E',
-  }
   return (
-    <IconActionButton
-      copy={copy}
+    <ToggleIconAction
+      active={organized}
+      activeClassName="text-[var(--accent-green)]"
+      activeLabel="Set note as not organized"
+      inactiveLabel="Set note as organized"
       onClick={onToggleOrganized}
-      className={cn(organized ? 'text-green-600' : 'hover:text-foreground')}
+      shortcut={formatShortcutDisplay({ display: '⌘E' })}
     >
       <CheckCircle size={16} weight={organized ? 'fill' : 'regular'} className={BREADCRUMB_ICON_CLASS} />
-    </IconActionButton>
+    </ToggleIconAction>
   )
 }
 
@@ -214,18 +274,17 @@ function DiffAction({
 }
 
 function AIChatAction({ showAIChat, onToggleAIChat }: Pick<BreadcrumbBarProps, 'showAIChat' | 'onToggleAIChat'>) {
-  const copy: ActionTooltipCopy = {
-    label: showAIChat ? 'Close the AI panel' : 'Open the AI panel',
-    shortcut: '⇧⌘L',
-  }
   return (
-    <IconActionButton
-      copy={copy}
+    <ToggleIconAction
+      active={!!showAIChat}
+      activeClassName="text-primary"
+      activeLabel="Close the AI panel"
+      inactiveLabel="Open the AI panel"
       onClick={onToggleAIChat}
-      className={cn(showAIChat ? 'text-primary' : 'hover:text-foreground')}
+      shortcut={formatShortcutDisplay({ display: '⌘⇧L' })}
     >
       <Sparkle size={16} weight={showAIChat ? 'fill' : 'regular'} className={BREADCRUMB_ICON_CLASS} />
-    </IconActionButton>
+    </ToggleIconAction>
   )
 }
 
@@ -251,7 +310,14 @@ function ArchiveAction({
 
 function DeleteAction({ onDelete }: Pick<BreadcrumbBarProps, 'onDelete'>) {
   return (
-    <IconActionButton copy={{ label: 'Delete this note', shortcut: '⌘⌫' }} onClick={onDelete} className="hover:text-destructive">
+    <IconActionButton
+      copy={{
+        label: 'Delete this note',
+        shortcut: formatShortcutDisplay({ display: '⌘⌫ / ⌘⌦' }),
+      }}
+      onClick={onDelete}
+      className="hover:text-destructive"
+    >
       <Trash size={16} className={BREADCRUMB_ICON_CLASS} />
     </IconActionButton>
   )
@@ -263,7 +329,15 @@ function InspectorAction({
 }: Pick<BreadcrumbBarProps, 'inspectorCollapsed' | 'onToggleInspector'>) {
   if (!inspectorCollapsed) return null
   return (
-    <IconActionButton copy={{ label: 'Open the properties panel', shortcut: '⌘⇧I' }} onClick={onToggleInspector} className="hover:text-foreground" tooltipAlign="end">
+    <IconActionButton
+      copy={{
+        label: 'Open the properties panel',
+        shortcut: formatShortcutDisplay({ display: '⌘⇧I' }),
+      }}
+      onClick={onToggleInspector}
+      className="hover:text-foreground"
+      tooltipAlign="end"
+    >
       <SlidersHorizontal size={16} className={BREADCRUMB_ICON_CLASS} />
     </IconActionButton>
   )
@@ -451,6 +525,8 @@ function BreadcrumbActions({
   rawMode,
   onToggleRaw,
   forceRawMode,
+  noteLayout,
+  onToggleNoteLayout,
   showAIChat,
   onToggleAIChat,
   inspectorCollapsed,
@@ -472,6 +548,7 @@ function BreadcrumbActions({
         onToggleDiff={onToggleDiff}
       />
       {!forceRawMode && <RawToggleButton rawMode={rawMode} onToggleRaw={onToggleRaw} />}
+      <NoteLayoutAction noteLayout={noteLayout} onToggleNoteLayout={onToggleNoteLayout} />
       <AIChatAction showAIChat={showAIChat} onToggleAIChat={onToggleAIChat} />
       <ArchiveAction archived={entry.archived} onArchive={onArchive} onUnarchive={onUnarchive} />
       <DeleteAction onDelete={onDelete} />

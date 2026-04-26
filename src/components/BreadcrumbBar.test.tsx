@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, act } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { BreadcrumbBar } from './BreadcrumbBar'
+import { formatShortcutDisplay } from '../hooks/appCommandCatalog'
 import type { VaultEntry } from '../types'
 
 const dragRegionMouseDown = vi.fn()
@@ -137,7 +138,11 @@ describe('BreadcrumbBar — archive/unarchive', () => {
 describe('BreadcrumbBar — organized shortcut hint', () => {
   it('shows Cmd+E on the organized toggle tooltip', async () => {
     render(<BreadcrumbBar entry={baseEntry} {...defaultProps} onToggleOrganized={vi.fn()} />)
-    await expectTooltip(screen.getByRole('button', { name: 'Set note as organized' }), 'Set note as organized', '⌘E')
+    await expectTooltip(
+      screen.getByRole('button', { name: 'Set note as organized' }),
+      'Set note as organized',
+      formatShortcutDisplay({ display: '⌘E' }),
+    )
   })
 
   it('hides the organized toggle when the workflow is disabled', () => {
@@ -299,5 +304,28 @@ describe('BreadcrumbBar — raw editor toggle', () => {
     const onToggleRaw = vi.fn()
     render(<BreadcrumbBar entry={baseEntry} {...defaultProps} rawMode={false} onToggleRaw={onToggleRaw} forceRawMode={false} />)
     expect(screen.getByRole('button', { name: 'Open the raw editor' })).toBeInTheDocument()
+  })
+})
+
+describe('BreadcrumbBar — note layout toggle', () => {
+  it('shows the left-align layout action while centered', () => {
+    render(<BreadcrumbBar entry={baseEntry} {...defaultProps} noteLayout="centered" onToggleNoteLayout={vi.fn()} />)
+
+    expect(screen.getByRole('button', { name: 'Switch to left-aligned note layout' })).toBeInTheDocument()
+  })
+
+  it('shows the centered layout action while left-aligned', () => {
+    render(<BreadcrumbBar entry={baseEntry} {...defaultProps} noteLayout="left" onToggleNoteLayout={vi.fn()} />)
+
+    expect(screen.getByRole('button', { name: 'Switch to centered note layout' })).toBeInTheDocument()
+  })
+
+  it('calls onToggleNoteLayout when the layout button is clicked', () => {
+    const onToggleNoteLayout = vi.fn()
+    render(<BreadcrumbBar entry={baseEntry} {...defaultProps} noteLayout="centered" onToggleNoteLayout={onToggleNoteLayout} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Switch to left-aligned note layout' }))
+
+    expect(onToggleNoteLayout).toHaveBeenCalledOnce()
   })
 })
