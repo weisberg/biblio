@@ -154,7 +154,6 @@ function NotePropertySection({
 function InteractiveNoteDetails({
   entry,
   noteStatus,
-  isSelected,
   displayProps,
   allEntries,
   typeEntryMap,
@@ -162,7 +161,6 @@ function InteractiveNoteDetails({
 }: {
   entry: VaultEntry
   noteStatus: NoteStatus
-  isSelected: boolean
   displayProps: string[]
   allEntries: VaultEntry[]
   typeEntryMap: Record<string, VaultEntry>
@@ -173,7 +171,6 @@ function InteractiveNoteDetails({
       <NoteTitleRow
         entry={entry}
         isBinary={false}
-        isSelected={isSelected}
         noteStatus={noteStatus}
       />
       <NoteSnippet snippet={entry.snippet} />
@@ -198,7 +195,6 @@ function StandardNoteContent({
   entry,
   isBinary,
   noteStatus,
-  isSelected,
   typeColor,
   displayProps,
   allEntries,
@@ -208,7 +204,6 @@ function StandardNoteContent({
   entry: VaultEntry
   isBinary: boolean
   noteStatus: NoteStatus
-  isSelected: boolean
   typeColor: string
   displayProps: string[]
   allEntries: VaultEntry[]
@@ -221,19 +216,17 @@ function StandardNoteContent({
   return (
     <>
       <NoteTypeIndicator TypeIcon={TypeIcon} typeColor={typeColor} />
-      <div className="space-y-2" data-testid="note-content-stack">
+      <div className="space-y-0.5" data-testid="note-content-stack">
         {isBinary ? (
           <NoteTitleRow
             entry={entry}
             isBinary={true}
-            isSelected={isSelected}
             noteStatus={noteStatus}
           />
         ) : (
           <InteractiveNoteDetails
             entry={entry}
             noteStatus={noteStatus}
-            isSelected={isSelected}
             displayProps={displayProps}
             allEntries={allEntries}
             typeEntryMap={typeEntryMap}
@@ -248,16 +241,14 @@ function StandardNoteContent({
 function NoteTitleRow({
   entry,
   isBinary,
-  isSelected,
   noteStatus,
 }: {
   entry: VaultEntry
   isBinary: boolean
-  isSelected: boolean
   noteStatus: NoteStatus
 }) {
   return (
-    <div className={cn('truncate pr-5 text-[13px]', isBinary ? 'text-muted-foreground' : 'text-foreground', isSelected && !isBinary ? 'font-semibold' : 'font-medium')}>
+    <div className={cn('truncate pr-5 text-[13px]', isBinary ? 'text-muted-foreground' : 'text-foreground', 'font-bold')}>
       {noteStatus !== 'clean' && !isBinary && <StatusDot noteStatus={noteStatus} />}
       <NoteTitleIcon icon={entry.icon} size={15} className="mr-1" testId="note-title-icon" />
       {entry.title}
@@ -274,8 +265,8 @@ function NoteDateRow({ entry }: { entry: VaultEntry }) {
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 text-[10px] text-muted-foreground" data-testid="note-date-row">
-      <span>{modifiedLabel}</span>
-      {createdLabel && <span className="justify-self-end text-right">{createdLabel}</span>}
+      <span className="text-[9px] font-bold text-black">{modifiedLabel}</span>
+      {createdLabel && <span className="justify-self-end text-right text-[9px] font-bold text-black">{createdLabel}</span>}
     </div>
   )
 }
@@ -428,7 +419,6 @@ function NoteItemContent({
       entry={entry}
       isBinary={isBinary}
       noteStatus={noteStatus}
-      isSelected={isSelected}
       typeColor={typeColor}
       displayProps={displayProps}
       allEntries={allEntries}

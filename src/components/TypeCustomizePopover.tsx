@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { MagnifyingGlass } from '@phosphor-icons/react'
 import { ICON_OPTIONS, type IconEntry } from '../utils/iconRegistry'
 import { ACCENT_COLORS } from '../utils/typeColors'
+import { toHexColor } from '../utils/colorUtils'
 import { cn } from '@/lib/utils'
 
 function filterIcons(icons: IconEntry[], query: string): IconEntry[] {
@@ -43,16 +44,40 @@ export function TypeCustomizePopover({
   onChangeTemplate,
   onClose,
 }: TypeCustomizePopoverProps) {
+  const isPaletteColorKey = useCallback((value: string | null) => {
+    if (!value) return false
+    return ACCENT_COLORS.some((c) => c.key === value)
+  }, [])
+
+  const normalizeHexInput = useCallback((value: string): string | null => {
+    const trimmed = value.trim()
+    if (!trimmed) return null
+    const prefixed = trimmed.startsWith('#') ? trimmed : `#${trimmed}`
+    return toHexColor(prefixed)
+  }, [])
+
   const [selectedColor, setSelectedColor] = useState(currentColor)
   const [selectedIcon, setSelectedIcon] = useState(currentIcon)
   const [search, setSearch] = useState('')
   const [templateText, setTemplateText] = useState(currentTemplate ?? '')
+  const [customHexInput, setCustomHexInput] = useState(
+    currentColor && !isPaletteColorKey(currentColor) ? currentColor : '',
+  )
 
   const filteredIcons = useMemo(() => filterIcons(ICON_OPTIONS, search), [search])
 
   const handleColorClick = (key: string) => {
     setSelectedColor(key)
+    setCustomHexInput('')
     onChangeColor(key)
+  }
+
+  const applyCustomHex = () => {
+    const normalizedHex = normalizeHexInput(customHexInput)
+    if (!normalizedHex) return
+    setSelectedColor(normalizedHex)
+    setCustomHexInput(normalizedHex)
+    onChangeColor(normalizedHex)
   }
 
   const handleIconClick = (name: string) => {
@@ -89,6 +114,31 @@ export function TypeCustomizePopover({
             title={c.label}
           />
         ))}
+      </div>
+
+      <div className="mb-3 flex items-center gap-2">
+        <input
+          type="text"
+          value={customHexInput}
+          onChange={(e) => setCustomHexInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              applyCustomHex()
+            }
+          }}
+          placeholder="Hex color (#RRGGBB)"
+          className="h-8 flex-1 rounded border border-border bg-background px-2 text-[12px] text-foreground placeholder:text-muted-foreground outline-none focus:border-primary"
+          data-testid="custom-hex-input"
+        />
+        <button
+          type="button"
+          className="h-8 shrink-0 rounded border border-border bg-background px-2 text-[12px] text-foreground transition-colors hover:bg-accent"
+          onClick={applyCustomHex}
+          data-testid="apply-custom-hex"
+        >
+          Apply
+        </button>
       </div>
 
       {/* Icon section */}

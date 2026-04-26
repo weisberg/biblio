@@ -4,6 +4,7 @@
  */
 
 import type { VaultEntry } from '../types'
+import { isValidCssColor } from './colorUtils'
 
 /** Builds a map from type name → Type document entry (for custom color/icon lookup).
  *  Stores both original title and lowercase version so lookups work regardless
@@ -68,11 +69,13 @@ const COLOR_KEY_TO_CSS_LIGHT: Record<string, string> = Object.fromEntries(
 /** Returns the CSS variable for the accent color of a given note type, with optional custom override */
 export function getTypeColor(isA: string | null, customColorKey?: string | null): string {
   if (customColorKey && COLOR_KEY_TO_CSS[customColorKey]) return COLOR_KEY_TO_CSS[customColorKey]
+  if (customColorKey && isValidCssColor(customColorKey)) return customColorKey
   return (isA && TYPE_COLOR_MAP[isA]) ?? DEFAULT_COLOR
 }
 
 /** Returns the CSS variable for the light/background variant of a given note type's color */
 export function getTypeLightColor(isA: string | null, customColorKey?: string | null): string {
   if (customColorKey && COLOR_KEY_TO_CSS_LIGHT[customColorKey]) return COLOR_KEY_TO_CSS_LIGHT[customColorKey]
+  if (customColorKey && isValidCssColor(customColorKey)) return `color-mix(in srgb, ${customColorKey} 14%, transparent)`
   return (isA && TYPE_LIGHT_COLOR_MAP[isA]) ?? DEFAULT_LIGHT_COLOR
 }

@@ -32,6 +32,10 @@ describe('getTypeColor', () => {
   it('uses gray custom color key', () => {
     expect(getTypeColor('Config', 'gray')).toBe('var(--accent-gray)')
   })
+
+  it('uses custom hex color when provided', () => {
+    expect(getTypeColor('Config', '#12abef')).toBe('#12abef')
+  })
 })
 
 describe('getTypeLightColor', () => {
@@ -54,6 +58,10 @@ describe('getTypeLightColor', () => {
 
   it('uses gray custom color key for light variant', () => {
     expect(getTypeLightColor('Config', 'gray')).toBe('var(--accent-gray-light)')
+  })
+
+  it('builds a light variant from custom hex color', () => {
+    expect(getTypeLightColor('Config', '#12abef')).toBe('color-mix(in srgb, #12abef 14%, transparent)')
   })
 })
 

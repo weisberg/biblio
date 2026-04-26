@@ -108,6 +108,22 @@ describe('TypeCustomizePopover', () => {
     expect(onChangeColor).toHaveBeenCalled()
   })
 
+  it('renders custom hex input and apply button', () => {
+    renderPopover()
+
+    expect(screen.getByTestId('custom-hex-input')).toBeInTheDocument()
+    expect(screen.getByTestId('apply-custom-hex')).toBeInTheDocument()
+  })
+
+  it('applies custom hex color and normalizes short hex', () => {
+    renderPopover()
+
+    fireEvent.change(screen.getByTestId('custom-hex-input'), { target: { value: '#abc' } })
+    fireEvent.click(screen.getByTestId('apply-custom-hex'))
+
+    expect(onChangeColor).toHaveBeenCalledWith('#aabbcc')
+  })
+
   it('calls onChangeIcon when an icon is clicked', () => {
     renderPopover()
 

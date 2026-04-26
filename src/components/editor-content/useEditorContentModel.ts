@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import type { useCreateBlockNote } from '@blocknote/react'
 import type { NoteLayout, NoteStatus, VaultEntry } from '../../types'
 import { useEditorTheme } from '../../hooks/useTheme'
@@ -27,6 +27,8 @@ export interface EditorContentProps {
   showDiffToggle: boolean
   showAIChat?: boolean
   onToggleAIChat?: () => void
+  wideTextArea?: boolean
+  onToggleWideTextArea?: () => void
   inspectorCollapsed: boolean
   onToggleInspector: () => void
   onNavigateWikilink: (target: string) => void
@@ -56,6 +58,14 @@ export function useEditorContentModel(props: EditorContentProps) {
   } = props
 
   const { cssVars } = useEditorTheme()
+  const effectiveCssVars = useMemo(() => {
+    if (!props.wideTextArea) return cssVars
+    return {
+      ...cssVars,
+      '--editor-max-width': '95vw',
+      '--editor-padding-horizontal': '0px',
+    }
+  }, [cssVars, props.wideTextArea])
   const {
     isArchived,
     isDeletedPreview,
@@ -76,7 +86,7 @@ export function useEditorContentModel(props: EditorContentProps) {
 
   return {
     ...props,
-    cssVars,
+    cssVars: effectiveCssVars,
     isArchived,
     isDeletedPreview,
     effectiveRawMode,

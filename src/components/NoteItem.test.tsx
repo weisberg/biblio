@@ -123,7 +123,7 @@ describe('NoteItem', () => {
       />,
     )
 
-    expect(screen.getByTestId('note-content-stack').className).toContain('space-y-2')
+    expect(screen.getByTestId('note-content-stack').className).toContain('space-y-0.5')
   })
 
   it('shows created date on the right side of the date row when available', () => {
