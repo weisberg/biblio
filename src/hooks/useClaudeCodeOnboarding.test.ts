@@ -14,7 +14,7 @@ const localStorageMock = (() => {
 
 Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock, writable: true })
 
-const DISMISSED_KEY = 'tolaria:claude-code-onboarding-dismissed'
+const DISMISSED_KEY = 'biblio:claude-code-onboarding-dismissed'
 
 describe('useClaudeCodeOnboarding', () => {
   beforeEach(() => {

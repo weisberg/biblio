@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import type { ComponentType, PropsWithChildren } from 'react'
 import { describe, expect, it, vi } from 'vitest'
-import { TolariaSideMenu } from './tolariaBlockNoteSideMenu'
+import { BiblioSideMenu } from './biblioBlockNoteSideMenu'
 
 let capturedDragHandleMenu: ComponentType | null = null
 
@@ -26,9 +26,9 @@ vi.mock('@blocknote/react', () => ({
   }),
 }))
 
-describe('TolariaSideMenu', () => {
+describe('BiblioSideMenu', () => {
   it('replaces BlockNote block colors with markdown-safe drag-handle items', () => {
-    render(<TolariaSideMenu />)
+    render(<BiblioSideMenu />)
 
     expect(screen.getByTestId('side-menu')).toBeInTheDocument()
     expect(capturedDragHandleMenu).not.toBeNull()

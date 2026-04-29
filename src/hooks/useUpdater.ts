@@ -8,7 +8,7 @@ import {
 } from '../lib/appUpdater'
 import { openExternalUrl } from '../utils/url'
 
-const RELEASE_NOTES_URL = 'https://refactoringhq.github.io/tolaria/'
+const RELEASE_NOTES_URL = 'https://refactoringhq.github.io/biblio/'
 const CALENDAR_VERSION_PATTERN = /^(\d{4})\.(\d{1,2})\.(\d{1,2})(?:-(alpha|stable)\.(\d+))?$/
 
 interface UpdateVersionInfo {

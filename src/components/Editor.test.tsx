@@ -124,9 +124,9 @@ vi.mock('@blocknote/mantine', () => ({
 
 vi.mock('@blocknote/mantine/style.css', () => ({}))
 
-vi.mock('./tolariaEditorFormatting', () => ({
-  TolariaFormattingToolbar: ({ children }: PropsWithChildren) => <>{children}</>,
-  TolariaFormattingToolbarController: () => null,
+vi.mock('./biblioEditorFormatting', () => ({
+  BiblioFormattingToolbar: ({ children }: PropsWithChildren) => <>{children}</>,
+  BiblioFormattingToolbarController: () => null,
 }))
 
 import { Editor } from './Editor'

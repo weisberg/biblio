@@ -156,7 +156,7 @@ function GuidanceMenuSection({
           onSelect={() => onRestoreGuidance?.()}
           data-testid="status-ai-guidance-restore"
         >
-          Restore Tolaria AI Guidance
+          Restore Biblio AI Guidance
         </DropdownMenuItem>
       )}
     </>

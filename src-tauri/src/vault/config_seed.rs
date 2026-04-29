@@ -260,7 +260,7 @@ pub fn restore_ai_guidance_files(
 }
 
 /// Seed `AGENTS.md` at vault root if missing or empty (idempotent, per-file).
-/// Also seeds Tolaria-managed root type definitions used by repair/bootstrap flows.
+/// Also seeds Biblio-managed root type definitions used by repair/bootstrap flows.
 pub fn seed_config_files(vault_path: impl AsRef<str>) {
     let vault_path = Path::new(vault_path.as_ref());
     if sync_ai_guidance_files(vault_path).unwrap_or(false) {
@@ -414,14 +414,14 @@ mod tests {
     fn assert_refreshes_outdated_managed_agents(run: VaultOperation) {
         let outdated_agents = AGENTS_MD.replacen(
             "Store note type in the `type:` frontmatter field.",
-            "`type:` is the preferred type field. Tolaria still understands legacy aliases such as `Is A`.",
+            "`type:` is the preferred type field. Biblio still understands legacy aliases such as `Is A`.",
             1,
         );
         let (_dir, vault) = run_with_agents(run, Some(&outdated_agents), None);
 
         let content = read_root_agents(&vault);
         assert!(content.contains("Store note type in the `type:` frontmatter field."));
-        assert!(!content.contains("Tolaria still understands legacy aliases such as `Is A`."));
+        assert!(!content.contains("Biblio still understands legacy aliases such as `Is A`."));
     }
 
     fn assert_legacy_agents_move_to_root(
@@ -461,7 +461,7 @@ mod tests {
         seed_config_files(vault.to_str().unwrap());
 
         assert!(vault.join("AGENTS.md").exists());
-        assert!(read_root_agents(&vault).contains("Tolaria Vault"));
+        assert!(read_root_agents(&vault).contains("Biblio Vault"));
         assert_eq!(read_root_claude(&vault), CLAUDE_MD_SHIM);
     }
 
@@ -494,7 +494,7 @@ mod tests {
         write_root_agents(&vault, "");
 
         seed_config_files(vault.to_str().unwrap());
-        assert!(read_root_agents(&vault).contains("Tolaria Vault"));
+        assert!(read_root_agents(&vault).contains("Biblio Vault"));
     }
 
     #[test]
@@ -502,7 +502,7 @@ mod tests {
         let (_dir, vault) = create_vault();
         write_root_agents(
             &vault,
-            "# AGENTS.md — Tolaria Vault\n\n- The first H1 in the body is the note title. Do not add `title:` frontmatter.\n",
+            "# AGENTS.md — Biblio Vault\n\n- The first H1 in the body is the note title. Do not add `title:` frontmatter.\n",
         );
 
         seed_config_files(vault.to_str().unwrap());
@@ -579,7 +579,7 @@ mod tests {
 
         assert!(vault.join("AGENTS.md").exists());
         let root = read_root_agents(&vault);
-        assert!(root.contains("Tolaria Vault"));
+        assert!(root.contains("Biblio Vault"));
         assert_eq!(read_root_claude(&vault), CLAUDE_MD_SHIM);
     }
 
@@ -611,7 +611,7 @@ mod tests {
         assert!(!vault.join("config").exists());
 
         let agents = read_root_agents(&vault);
-        assert!(agents.contains("Tolaria Vault"));
+        assert!(agents.contains("Biblio Vault"));
         let type_content = fs::read_to_string(vault.join("type.md")).unwrap();
         assert!(type_content.contains("# Type"));
         assert!(type_content.contains("visible: false"));

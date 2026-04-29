@@ -1,6 +1,6 @@
 # Security Policy
 
-Thanks for helping keep Tolaria safe.
+Thanks for helping keep Biblio safe.
 
 If you believe you have found a security vulnerability, **please do not open a public GitHub issue**. Report it privately instead.
 
@@ -16,7 +16,7 @@ We currently support security fixes for:
 
 ## Reporting a vulnerability
 
-Please email **luca@refactoring.club** with the subject line **`[Tolaria Security]`**.
+Please email **luca@refactoring.club** with the subject line **`[Biblio Security]`**.
 
 Include as much of the following as you can:
 

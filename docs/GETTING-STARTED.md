@@ -56,7 +56,7 @@ pnpm playwright:regression  # Full Playwright regression suite
 ## Directory Structure
 
 ```
-tolaria/
+biblio/
 ├── src/                          # React frontend
 │   ├── main.tsx                  # Entry point (renders <App />)
 │   ├── App.tsx                   # Root component — orchestrates layout + state
@@ -226,7 +226,7 @@ tolaria/
 
 ### Fixtures
 
-- `demo-vault-v2/` is the small checked-in QA fixture used for native/manual Tolaria flows. It is intentionally curated around a handful of search, relationship, project-navigation, and attachment scenarios.
+- `demo-vault-v2/` is the small checked-in QA fixture used for native/manual Biblio flows. It is intentionally curated around a handful of search, relationship, project-navigation, and attachment scenarios.
 - `tests/fixtures/test-vault/` is the deterministic Playwright fixture copied into temp directories for isolated integration and smoke tests.
 - `python3 scripts/generate_demo_vault.py` generates the larger synthetic vault on demand at `generated-fixtures/demo-vault-large/` for scale/performance experiments. That output is gitignored and should not bloat the normal QA fixture.
 
@@ -268,10 +268,10 @@ tolaria/
 | File | Why it matters |
 |------|---------------|
 | `src/components/Editor.tsx` | BlockNote setup, breadcrumb bar, diff/raw toggle. |
-| `src/components/SingleEditorView.tsx` | Shared BlockNote shell, Tolaria formatting controllers, and suggestion menus. |
+| `src/components/SingleEditorView.tsx` | Shared BlockNote shell, Biblio formatting controllers, and suggestion menus. |
 | `src/components/editorSchema.tsx` | Custom wikilink inline content type definition. |
-| `src/components/tolariaEditorFormatting.tsx` | Markdown-safe formatting toolbar surface for BlockNote. |
-| `src/components/tolariaEditorFormattingConfig.ts` | Filters toolbar and slash-menu commands to markdown-roundtrippable actions. |
+| `src/components/biblioEditorFormatting.tsx` | Markdown-safe formatting toolbar surface for BlockNote. |
+| `src/components/biblioEditorFormattingConfig.ts` | Filters toolbar and slash-menu commands to markdown-roundtrippable actions. |
 | `src/utils/wikilinks.ts` | Wikilink preprocessing pipeline (markdown ↔ BlockNote). |
 | `src/components/RawEditorView.tsx` | CodeMirror 6 raw markdown editor. |
 

@@ -6,14 +6,14 @@ describe('buildReleaseHistoryPage', () => {
       {
         assets: [
           {
-            browser_download_url: 'https://example.com/Tolaria.dmg',
-            name: 'Tolaria.dmg',
+            browser_download_url: 'https://example.com/Biblio.dmg',
+            name: 'Biblio.dmg',
           },
         ],
         body: '## Highlights\n\n- Faster startup\n- Better release notes',
         body_html: '<h2>Highlights</h2><ul><li>Faster startup</li><li>Better release notes</li></ul>',
-        html_url: 'https://github.com/refactoringhq/tolaria/releases/tag/stable-v2026.4.19',
-        name: 'Tolaria Stable 2026.4.19',
+        html_url: 'https://github.com/refactoringhq/biblio/releases/tag/stable-v2026.4.19',
+        name: 'Biblio Stable 2026.4.19',
         prerelease: false,
         published_at: '2026-04-19T11:00:00Z',
         tag_name: 'stable-v2026.4.19',
@@ -21,13 +21,13 @@ describe('buildReleaseHistoryPage', () => {
       {
         assets: [
           {
-            browser_download_url: 'https://example.com/Tolaria-setup.exe',
-            name: 'Tolaria-setup.exe',
+            browser_download_url: 'https://example.com/Biblio-setup.exe',
+            name: 'Biblio-setup.exe',
           },
         ],
         body: '**Alpha** notes with [details](https://example.com/details).',
         body_html: '<p><strong>Alpha</strong> notes with <a href="https://example.com/details">details</a>.</p>',
-        html_url: 'https://github.com/refactoringhq/tolaria/releases/tag/2026.4.19-alpha.1',
+        html_url: 'https://github.com/refactoringhq/biblio/releases/tag/2026.4.19-alpha.1',
         name: 'Alpha 2026.4.19.1',
         prerelease: true,
         published_at: '2026-04-19T10:00:00Z',
@@ -45,7 +45,7 @@ describe('buildReleaseHistoryPage', () => {
     expect(html).toContain('<h2>Highlights</h2>')
     expect(html).toContain('<li>Faster startup</li>')
     expect(html).toContain('<strong>Alpha</strong> notes')
-    expect(html).toContain('Tolaria-setup.exe')
+    expect(html).toContain('Biblio-setup.exe')
     expect(html).toContain('View on GitHub')
   })
 
@@ -67,29 +67,29 @@ describe('buildReleaseHistoryPage', () => {
     const html = buildReleaseHistoryPage([
       {
         body: 'Older alpha release',
-        name: 'Tolaria Alpha 2026.4.20.9',
+        name: 'Biblio Alpha 2026.4.20.9',
         prerelease: true,
         published_at: '2026-04-20T09:44:02Z',
         tag_name: 'alpha-v2026.4.20-alpha.9',
       },
       {
         body: 'Newest alpha release',
-        name: 'Tolaria Alpha 2026.4.20.12',
+        name: 'Biblio Alpha 2026.4.20.12',
         prerelease: true,
         published_at: '2026-04-20T16:53:41Z',
         tag_name: 'alpha-v2026.4.20-alpha.12',
       },
       {
         body: 'Middle alpha release',
-        name: 'Tolaria Alpha 2026.4.20.10',
+        name: 'Biblio Alpha 2026.4.20.10',
         prerelease: true,
         published_at: '2026-04-20T10:32:01Z',
         tag_name: 'alpha-v2026.4.20-alpha.10',
       },
     ])
 
-    expect(html.indexOf('Tolaria Alpha 2026.4.20.12')).toBeLessThan(html.indexOf('Tolaria Alpha 2026.4.20.10'))
-    expect(html.indexOf('Tolaria Alpha 2026.4.20.10')).toBeLessThan(html.indexOf('Tolaria Alpha 2026.4.20.9'))
+    expect(html.indexOf('Biblio Alpha 2026.4.20.12')).toBeLessThan(html.indexOf('Biblio Alpha 2026.4.20.10'))
+    expect(html.indexOf('Biblio Alpha 2026.4.20.10')).toBeLessThan(html.indexOf('Biblio Alpha 2026.4.20.9'))
   })
 
   it('filters draft releases and shows an empty state for channels without published builds', () => {

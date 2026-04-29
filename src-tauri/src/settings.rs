@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 
-const APP_CONFIG_DIR: &str = "com.tolaria.app";
+const APP_CONFIG_DIR: &str = "com.biblio.app";
 const LEGACY_APP_CONFIG_DIR: &str = "com.laputa.app";
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
@@ -456,18 +456,18 @@ mod tests {
         assert!(result.is_ok());
         let path = result.unwrap();
         let path = path.to_str().unwrap();
-        assert!(path.contains("com.tolaria.app") || path.contains("com.laputa.app"));
+        assert!(path.contains("com.biblio.app") || path.contains("com.laputa.app"));
     }
 
     #[test]
-    fn test_preferred_settings_path_uses_tolaria_namespace() {
+    fn test_preferred_settings_path_uses_biblio_namespace() {
         let result = preferred_app_config_path("settings.json");
         assert!(result.is_ok());
         assert!(result
             .unwrap()
             .to_str()
             .unwrap()
-            .contains("com.tolaria.app"));
+            .contains("com.biblio.app"));
     }
 
     #[test]

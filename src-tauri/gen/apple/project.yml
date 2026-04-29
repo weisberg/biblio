@@ -1,6 +1,6 @@
-name: Tolaria
+name: Biblio
 options:
-  bundleIdPrefix: club.refactoring.tolaria
+  bundleIdPrefix: club.refactoring.biblio
   deploymentTarget:
     iOS: 14.0
 fileGroups: [../../src]
@@ -10,8 +10,8 @@ configs:
 settingGroups:
   app:
     base:
-      PRODUCT_NAME: Tolaria
-      PRODUCT_BUNDLE_IDENTIFIER: club.refactoring.tolaria
+      PRODUCT_NAME: Biblio
+      PRODUCT_BUNDLE_IDENTIFIER: club.refactoring.biblio
 targetTemplates:
   app:
     type: application

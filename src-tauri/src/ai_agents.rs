@@ -302,12 +302,12 @@ fn build_codex_args(request: &AiAgentStreamRequest) -> Result<Vec<String>, Strin
         "-C".into(),
         request.vault_path.clone(),
         "-c".into(),
-        r#"mcp_servers.tolaria.command="node""#.into(),
+        r#"mcp_servers.biblio.command="node""#.into(),
         "-c".into(),
-        format!(r#"mcp_servers.tolaria.args=["{}"]"#, mcp_server_path),
+        format!(r#"mcp_servers.biblio.args=["{}"]"#, mcp_server_path),
         "-c".into(),
         format!(
-            r#"mcp_servers.tolaria.env={{VAULT_PATH="{}"}}"#,
+            r#"mcp_servers.biblio.env={{VAULT_PATH="{}"}}"#,
             request.vault_path
         ),
     ])

@@ -29,7 +29,7 @@ function getPromptCopy(statuses: AiAgentsStatus) {
   if (!hasAnyInstalledAiAgent(statuses)) {
     return {
       accentClassName: 'bg-[var(--feedback-warning-bg)] text-[var(--feedback-warning-text)]',
-      description: 'Tolaria works best with a local CLI AI agent installed.',
+      description: 'Biblio works best with a local CLI AI agent installed.',
       icon: <Bot className="size-7" />,
       title: 'No AI agents detected',
     }
@@ -37,7 +37,7 @@ function getPromptCopy(statuses: AiAgentsStatus) {
 
   return {
     accentClassName: 'bg-[var(--feedback-success-bg)] text-[var(--feedback-success-text)]',
-    description: 'Your AI agents are ready to use in Tolaria.',
+    description: 'Your AI agents are ready to use in Biblio.',
     icon: <CheckCircle2 className="size-7" />,
     title: 'AI agents ready',
   }

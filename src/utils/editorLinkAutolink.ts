@@ -113,7 +113,7 @@ export function looksLikeLocalFileReference(value: LinkValue) {
   return isPathLikeFileReference(normalized)
 }
 
-export function shouldAutoLinkTolariaHref(url: LinkValue) {
+export function shouldAutoLinkBiblioHref(url: LinkValue) {
   if (looksLikeLocalFileReference(url)) {
     return false
   }

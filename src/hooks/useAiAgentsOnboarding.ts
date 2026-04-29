@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 
-const AI_AGENTS_ONBOARDING_DISMISSED_KEY = 'tolaria:ai-agents-onboarding-dismissed'
-const LEGACY_CLAUDE_ONBOARDING_DISMISSED_KEY = 'tolaria:claude-code-onboarding-dismissed'
+const AI_AGENTS_ONBOARDING_DISMISSED_KEY = 'biblio:ai-agents-onboarding-dismissed'
+const LEGACY_CLAUDE_ONBOARDING_DISMISSED_KEY = 'biblio:claude-code-onboarding-dismissed'
 
 function wasDismissed(): boolean {
   try {

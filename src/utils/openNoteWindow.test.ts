@@ -44,7 +44,7 @@ describe('openNoteWindow', () => {
 
   it('builds a root-app route that preserves the note window params', () => {
     const url = buildNoteWindowUrl('/vault/Folder/My Note.md', '/Users/luca/Laputa Vault', 'AI / ML')
-    const parsed = new URL(url, 'https://tolaria.localhost')
+    const parsed = new URL(url, 'https://biblio.localhost')
 
     expect(parsed.pathname).toBe('/')
     expect(parsed.searchParams.get('window')).toBe('note')
@@ -77,7 +77,7 @@ describe('openNoteWindow', () => {
         decorations: true,
       }),
     )
-    expect(JSON.parse(localStorage.getItem('tolaria:note-window:note-1776182400000') ?? '{}')).toEqual({
+    expect(JSON.parse(localStorage.getItem('biblio:note-window:note-1776182400000') ?? '{}')).toEqual({
       notePath: '/vault/Folder/My Note.md',
       vaultPath: '/Users/luca/Laputa Vault',
       noteTitle: 'AI / ML',

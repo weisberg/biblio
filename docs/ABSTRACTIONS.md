@@ -1,16 +1,16 @@
 # Abstractions
 
-Key abstractions and domain models in Tolaria.
+Key abstractions and domain models in Biblio.
 
 ## Design Philosophy
 
-Tolaria's abstractions follow the **convention over configuration** principle: standard field names and folder structures have well-defined meanings and trigger UI behavior automatically. This makes vaults legible both to humans and to AI agents — the more a vault follows conventions, the less custom configuration an AI needs to navigate it correctly.
+Biblio's abstractions follow the **convention over configuration** principle: standard field names and folder structures have well-defined meanings and trigger UI behavior automatically. This makes vaults legible both to humans and to AI agents — the more a vault follows conventions, the less custom configuration an AI needs to navigate it correctly.
 
 The full set of design principles is documented in [ARCHITECTURE.md](./ARCHITECTURE.md#design-principles).
 
 ## Semantic Field Names (conventions)
 
-These frontmatter field names have special meaning in Tolaria's UI:
+These frontmatter field names have special meaning in Biblio's UI:
 
 | Field | Meaning | UI behavior |
 |---|---|---|
@@ -27,7 +27,7 @@ These frontmatter field names have special meaning in Tolaria's UI:
 | `related_to:` | Lateral relationship | Humanized to `Related to` in the UI |
 | `has:` | Contained relationship | Humanized to `Has` in the UI |
 
-Relationship fields are detected dynamically — any frontmatter field containing `[[wikilink]]` values is treated as a relationship (see [ADR-0010](adr/0010-dynamic-wikilink-relationship-detection.md)). Tolaria's own default relationship vocabulary uses snake_case on disk, but labels are humanized at render time and existing user-authored keys are left untouched.
+Relationship fields are detected dynamically — any frontmatter field containing `[[wikilink]]` values is treated as a relationship (see [ADR-0010](adr/0010-dynamic-wikilink-relationship-detection.md)). Biblio's own default relationship vocabulary uses snake_case on disk, but labels are humanized at render time and existing user-authored keys are left untouched.
 
 ### System Properties (underscore convention)
 
@@ -36,7 +36,7 @@ Any frontmatter field whose name starts with `_` is a **system property**:
 - It is **not shown** in the Properties panel (neither for notes nor for Type notes)
 - It is **not exposed** as a user-visible property in search, filters, or the UI
 - It **is editable** directly in the raw editor (power users can access it if needed)
-- It is used by Tolaria internally for configuration, behavior, and UI preferences
+- It is used by Biblio internally for configuration, behavior, and UI preferences
 
 Examples:
 ```yaml
@@ -147,13 +147,13 @@ Type is determined **purely** from the `type:` frontmatter field — it is never
 ├── weekly-review.md       ← type: Procedure
 ├── john-doe.md            ← type: Person
 ├── some-topic.md          ← type: Topic
-├── AGENTS.md              ← canonical Tolaria AI guidance
+├── AGENTS.md              ← canonical Biblio AI guidance
 ├── CLAUDE.md              ← compatibility shim pointing at AGENTS.md
 ├── ...
 └── type/                  ← type definition documents
 ```
 
-New notes are created at the vault root: `{vault}/{slug}.md`. Changing a note's type only requires updating the `type:` field in frontmatter — the file does not move. Moving a note into a user folder is a separate filesystem concern: the folder path changes, but the note keeps the same filename and `type:` value. The `type/` folder exists solely for type definition documents. Legacy `config/` content is still recognized during migration and repair, but Tolaria's managed AI guidance now lives at the vault root.
+New notes are created at the vault root: `{vault}/{slug}.md`. Changing a note's type only requires updating the `type:` field in frontmatter — the file does not move. Moving a note into a user folder is a separate filesystem concern: the folder path changes, but the note keeps the same filename and `type:` value. The `type/` folder exists solely for type definition documents. Legacy `config/` content is still recognized during migration and repair, but Biblio's managed AI guidance now lives at the vault root.
 
 A `flatten_vault` migration command is available to move existing notes from type-based subfolders to the vault root.
 
@@ -235,11 +235,11 @@ All `[[wikilinks]]` in the note body (not frontmatter) are extracted by regex an
 
 ### Title / Filename Sync
 
-Tolaria separates **display title** from the file identifier:
+Biblio separates **display title** from the file identifier:
 
 - **Display title resolution** (`extract_title` in `vault/parsing.rs`): first `# H1` on the first non-empty body line, then legacy frontmatter `title:`, then slug-to-title from the filename stem.
 - **Opening a note is read-only**: selecting a note does not inject or auto-correct `title:` frontmatter.
-- **Explicit filename actions** (`rename_note`): breadcrumb rename/sync actions stage crash-safe note renames through a hidden `.tolaria-rename-txn/` transaction directory, recover unfinished renames on the next vault scan, update wikilinks across the vault, and surface any failed backlink rewrites instead of silently reporting partial success. The editor body remains the title editing surface.
+- **Explicit filename actions** (`rename_note`): breadcrumb rename/sync actions stage crash-safe note renames through a hidden `.biblio-rename-txn/` transaction directory, recover unfinished renames on the next vault scan, update wikilinks across the vault, and surface any failed backlink rewrites instead of silently reporting partial success. The editor body remains the title editing surface.
 - **Unicode-aware note stems** (`src/utils/noteSlug.ts`, `vault/rename.rs`): frontend and backend slugging preserve Unicode letters/digits in note filenames, untitled-rename detection, and fallback wikilink targets while still collapsing symbol-only titles to `untitled`.
 - **Portable filename validation** (`vault/filename_rules.rs`): note filenames, folder names, and custom view filenames all reject Windows-reserved device names, invalid characters, and trailing dot/space suffixes so a vault created on macOS/Linux still clones and syncs cleanly on Windows.
 - **Untitled drafts** start as `untitled-*.md` and are auto-renamed on save once the note gains an H1.
@@ -278,7 +278,7 @@ type SidebarSelection =
 
 ### Neighborhood Mode
 
-`SidebarSelection.kind === 'entity'` is Tolaria's Neighborhood mode for note-list browsing.
+`SidebarSelection.kind === 'entity'` is Biblio's Neighborhood mode for note-list browsing.
 
 - The selected `entry` is the neighborhood source note.
 - The source note stays pinned at the top of the note list as a standard active row, not a special card.
@@ -470,7 +470,7 @@ Defined in `src/components/editorSchema.tsx` and styled in `src/components/Edito
 
 - The schema overrides BlockNote's default `codeBlock` spec with `createCodeBlockSpec({ ...codeBlockOptions, defaultLanguage: "text" })` from `@blocknote/code-block`.
 - Fenced code blocks now use BlockNote's supported Shiki-backed highlighter path, which renders `.shiki` token spans directly inside the editor DOM.
-- Tolaria keeps `defaultLanguage: "text"` so unlabeled code blocks do not silently become JavaScript while still supporting the packaged language aliases such as `ts` → `typescript`.
+- Biblio keeps `defaultLanguage: "text"` so unlabeled code blocks do not silently become JavaScript while still supporting the packaged language aliases such as `ts` → `typescript`.
 - Inline-code chip styling remains scoped to `.bn-inline-content code`, so fenced `pre > code` nodes keep BlockNote's dark shell instead of inheriting the muted inline surface.
 
 ### Markdown Math
@@ -480,17 +480,17 @@ Defined in `src/utils/mathMarkdown.ts`, `src/components/editorSchema.tsx`, and s
 - `$...$` becomes a `mathInline` schema node and line-owned `$$...$$` / multiline `$$` blocks become `mathBlock` nodes.
 - The rich editor renders both node types through KaTeX with `throwOnError: false`, so malformed formulas keep their source visible instead of breaking the note.
 - `serializeMathAwareBlocks()` converts math nodes back to Markdown delimiters before save, raw-mode entry, and editor-position snapshots.
-- Raw CodeMirror mode always shows the plain Markdown source, so imported technical notes stay editable outside Tolaria.
+- Raw CodeMirror mode always shows the plain Markdown source, so imported technical notes stay editable outside Biblio.
 
 ### Formatting Surface Policy
 
-Defined in `src/components/tolariaEditorFormatting.tsx` and `src/components/tolariaEditorFormattingConfig.ts`:
+Defined in `src/components/biblioEditorFormatting.tsx` and `src/components/biblioEditorFormattingConfig.ts`:
 
-- `SingleEditorView` disables BlockNote's default formatting toolbar, `/` menu, and side menu, then mounts Tolaria-owned controllers so the visible formatting surface matches Tolaria's markdown round-trip guarantees.
-- The formatting toolbar only exposes inline controls that persist through `blocksToMarkdownLossy()` in Tolaria's save pipeline: bold, italic, strike, nesting, and link creation. Controls that BlockNote can render temporarily but Tolaria cannot faithfully persist, such as underline, color, alignment, and the block-type dropdown, are hidden instead of appearing to work and later disappearing.
-- Tolaria's formatting-toolbar controller also keeps file/image actions mounted across the tiny hover gap between an image block and the floating toolbar, and while the toolbar itself is hovered, so image controls remain usable instead of collapsing mid-interaction.
-- The `/` slash menu remains the supported path for markdown-safe block transformations such as headings, quotes, and list blocks. Tolaria filters out BlockNote's toggle-heading and toggle-list variants because those do not map cleanly to the markdown note model.
-- The block-handle side menu keeps only actions that survive Tolaria's markdown round-trip. Delete and table-header toggles remain available; BlockNote's `Colors` submenu is removed because block colors are not part of Tolaria's supported markdown surface.
+- `SingleEditorView` disables BlockNote's default formatting toolbar, `/` menu, and side menu, then mounts Biblio-owned controllers so the visible formatting surface matches Biblio's markdown round-trip guarantees.
+- The formatting toolbar only exposes inline controls that persist through `blocksToMarkdownLossy()` in Biblio's save pipeline: bold, italic, strike, nesting, and link creation. Controls that BlockNote can render temporarily but Biblio cannot faithfully persist, such as underline, color, alignment, and the block-type dropdown, are hidden instead of appearing to work and later disappearing.
+- Biblio's formatting-toolbar controller also keeps file/image actions mounted across the tiny hover gap between an image block and the floating toolbar, and while the toolbar itself is hovered, so image controls remain usable instead of collapsing mid-interaction.
+- The `/` slash menu remains the supported path for markdown-safe block transformations such as headings, quotes, and list blocks. Biblio filters out BlockNote's toggle-heading and toggle-list variants because those do not map cleanly to the markdown note model.
+- The block-handle side menu keeps only actions that survive Biblio's markdown round-trip. Delete and table-header toggles remain available; BlockNote's `Colors` submenu is removed because block colors are not part of Biblio's supported markdown surface.
 - `useNoteWikilinkDrop()` is the shared editor-drop abstraction for dragging note rows into either editor mode. It reads the existing note-retargeting drag payload, resolves the vault-relative stem, and inserts a canonical `[[wikilink]]` without hijacking unrelated plain-text drags.
 
 ### Markdown-to-BlockNote Pipeline
@@ -547,7 +547,7 @@ Typed ASCII arrow sequences are normalized consistently in both editor modes:
 
 ## Styling
 
-The app uses internal light and dark themes owned by Tolaria (see [ADR-0081](adr/0081-internal-light-dark-theme-runtime.md)). The previous vault-authored theming system remains removed; theme mode is an installation-local app preference.
+The app uses internal light and dark themes owned by Biblio (see [ADR-0081](adr/0081-internal-light-dark-theme-runtime.md)). The previous vault-authored theming system remains removed; theme mode is an installation-local app preference.
 
 1. **Global CSS variables** (`src/index.css`): Semantic app colors, borders, surfaces, and interaction states via `:root` / `[data-theme]`, bridged to Tailwind v4
 2. **Editor theme** (`src/theme.json`): BlockNote typography, flattened to CSS vars by `useEditorTheme`
@@ -609,7 +609,7 @@ No indexing step required — search runs directly against the filesystem.
 ### Vault Switching
 
 `useVaultSwitcher` hook manages multiple vaults:
-- Persists vault list to `~/.config/com.tolaria.app/vaults.json` (reads legacy `com.laputa.app` on upgrade)
+- Persists vault list to `~/.config/com.biblio.app/vaults.json` (reads legacy `com.laputa.app` on upgrade)
 - Switching closes all tabs and resets sidebar
 - Supports adding, removing, hiding/restoring vaults
 - Default vault: public Getting Started starter vault cloned on demand
@@ -623,20 +623,20 @@ Per-vault settings stored locally and scoped by vault path:
 
 ### AI Guidance Files
 
-Tolaria tracks managed vault-level AI guidance separately from normal note content:
-- `AGENTS.md` is the canonical managed guidance file for Tolaria-aware coding agents
+Biblio tracks managed vault-level AI guidance separately from normal note content:
+- `AGENTS.md` is the canonical managed guidance file for Biblio-aware coding agents
 - `CLAUDE.md` is a compatibility shim that points Claude Code back to `AGENTS.md`
 - `useVaultAiGuidanceStatus` reads `get_vault_ai_guidance_status` and normalizes the backend state into four UI cases: `managed`, `missing`, `broken`, and `custom`
-- `restore_vault_ai_guidance` repairs only Tolaria-managed files; user-authored custom `AGENTS.md` / `CLAUDE.md` files are surfaced as custom and left untouched
+- `restore_vault_ai_guidance` repairs only Biblio-managed files; user-authored custom `AGENTS.md` / `CLAUDE.md` files are surfaced as custom and left untouched
 - The status bar AI badge and command palette consume that abstraction to expose restore actions only when the managed guidance is missing or broken
 
 ### Getting Started / Onboarding
 
 `useOnboarding` hook detects first launch:
 - If vault path doesn't exist → show `WelcomeScreen`
-- User can create a new empty vault, open an existing folder, or clone the public Getting Started vault into a chosen parent folder; Tolaria derives the final `Getting Started` child path before cloning
-- After the starter repo clone completes, Tolaria removes every remote so the new vault opens local-only by default
-- Welcome state tracked in localStorage (`tolaria_welcome_dismissed`, with legacy fallback)
+- User can create a new empty vault, open an existing folder, or clone the public Getting Started vault into a chosen parent folder; Biblio derives the final `Getting Started` child path before cloning
+- After the starter repo clone completes, Biblio removes every remote so the new vault opens local-only by default
+- Welcome state tracked in localStorage (`biblio_welcome_dismissed`, with legacy fallback)
 
 `useGettingStartedClone` encapsulates the non-onboarding Getting Started action:
 - Opens the same parent-folder picker used by onboarding
@@ -651,7 +651,7 @@ Tolaria tracks managed vault-level AI guidance separately from normal note conte
 
 ### Remote Git Operations
 
-Tolaria delegates remote auth to the user's system git setup:
+Biblio delegates remote auth to the user's system git setup:
 - `CloneVaultModal` captures a remote URL and local destination
 - `clone_git_repo` and `create_getting_started_vault` both run system git clone work in blocking Tokio tasks so clone UIs stay responsive
 - `git_add_remote` uses the same system git path and refuses remotes whose history is unrelated or ahead of the local vault
@@ -660,7 +660,7 @@ Tolaria delegates remote auth to the user's system git setup:
 
 ## Settings
 
-App-level settings persisted at `~/.config/com.tolaria.app/settings.json` (reads legacy `com.laputa.app` on upgrade):
+App-level settings persisted at `~/.config/com.biblio.app/settings.json` (reads legacy `com.laputa.app` on upgrade):
 
 ```typescript
 interface Settings {

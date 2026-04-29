@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { getFormattingToolbarItems } from '@blocknote/react'
 import {
-  filterTolariaFormattingToolbarItems,
-  filterTolariaSlashMenuItems,
-  getTolariaBlockTypeSelectItems,
-} from './tolariaEditorFormattingConfig'
+  filterBiblioFormattingToolbarItems,
+  filterBiblioSlashMenuItems,
+  getBiblioBlockTypeSelectItems,
+} from './biblioEditorFormattingConfig'
 
-describe('tolariaEditorFormatting', () => {
+describe('biblioEditorFormatting', () => {
   it('keeps the markdown-safe toolbar controls and block type select', () => {
-    const itemKeys = filterTolariaFormattingToolbarItems(
-      getFormattingToolbarItems(getTolariaBlockTypeSelectItems()),
+    const itemKeys = filterBiblioFormattingToolbarItems(
+      getFormattingToolbarItems(getBiblioBlockTypeSelectItems()),
     ).map((item) => String(item.key))
 
     expect(itemKeys).toContain('blockTypeSelect')
@@ -28,7 +28,7 @@ describe('tolariaEditorFormatting', () => {
   })
 
   it('returns the audited markdown-safe block types for the toolbar select', () => {
-    expect(getTolariaBlockTypeSelectItems()).toEqual([
+    expect(getBiblioBlockTypeSelectItems()).toEqual([
       expect.objectContaining({ name: 'Paragraph', type: 'paragraph' }),
       expect.objectContaining({ name: 'Heading 1', type: 'heading', props: { level: 1 } }),
       expect.objectContaining({ name: 'Heading 2', type: 'heading', props: { level: 2 } }),
@@ -45,20 +45,20 @@ describe('tolariaEditorFormatting', () => {
   })
 
   it('filters unsupported toggle slash-menu variants and annotates supported markdown commands', () => {
-    type TolariaSlashMenuTestItem = {
+    type BiblioSlashMenuTestItem = {
       key: string
       title: string
       onItemClick: () => void
       subtext?: string
     }
 
-    const items = filterTolariaSlashMenuItems([
+    const items = filterBiblioSlashMenuItems([
       { key: 'toggle_heading', title: 'Toggle heading', onItemClick: () => {} },
       { key: 'toggle_list', title: 'Toggle list', onItemClick: () => {} },
       { key: 'heading', title: 'Heading', onItemClick: () => {} },
       { key: 'bullet_list', title: 'Bullet List', onItemClick: () => {} },
       { key: 'code_block', title: 'Code Block', onItemClick: () => {} },
-    ] satisfies TolariaSlashMenuTestItem[])
+    ] satisfies BiblioSlashMenuTestItem[])
 
     expect(items.map((item) => item.key)).toEqual([
       'heading',

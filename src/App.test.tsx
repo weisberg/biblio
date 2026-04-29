@@ -410,17 +410,17 @@ vi.mock('@blocknote/mantine', () => ({
 
 vi.mock('@blocknote/mantine/style.css', () => ({}))
 
-vi.mock('./components/tolariaEditorFormatting', () => ({
-  TolariaFormattingToolbar: () => null,
-  TolariaFormattingToolbarController: () => null,
+vi.mock('./components/biblioEditorFormatting', () => ({
+  BiblioFormattingToolbar: () => null,
+  BiblioFormattingToolbarController: () => null,
 }))
 
 import App from './App'
 import { useUpdater } from './hooks/useUpdater'
 import { isTauri } from './mock-tauri'
 
-const AI_AGENTS_ONBOARDING_DISMISSED_KEY = 'tolaria:ai-agents-onboarding-dismissed'
-const CLAUDE_CODE_ONBOARDING_DISMISSED_KEY = 'tolaria:claude-code-onboarding-dismissed'
+const AI_AGENTS_ONBOARDING_DISMISSED_KEY = 'biblio:ai-agents-onboarding-dismissed'
+const CLAUDE_CODE_ONBOARDING_DISMISSED_KEY = 'biblio:claude-code-onboarding-dismissed'
 
 function createMockUpdaterResult(
   checkForUpdates: () => Promise<{ kind: 'up-to-date' } | { kind: 'available'; version: string; displayVersion: string } | { kind: 'error'; message: string }> = async () => ({ kind: 'up-to-date' }),
@@ -535,7 +535,7 @@ describe('App', () => {
     fireEvent.click(screen.getByTestId('status-build-number'))
 
     await waitFor(() => {
-      expect(screen.getByText('Tolaria 2026.4.25 is available')).toBeInTheDocument()
+      expect(screen.getByText('Biblio 2026.4.25 is available')).toBeInTheDocument()
     })
   })
 
@@ -603,7 +603,7 @@ describe('App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByText('Help improve Tolaria')).toBeInTheDocument()
+      expect(screen.getByText('Help improve Biblio')).toBeInTheDocument()
     })
 
     fireEvent.click(screen.getByTestId('telemetry-accept'))
@@ -619,7 +619,7 @@ describe('App', () => {
     ['telemetry-decline', 'No thanks'],
   ])('ignores a remembered default vault after %s when onboarding was never completed', async (buttonTestId) => {
     const rememberedDefaultVaultPath = expectedDefaultVaultPath
-    localStorage.setItem('tolaria_welcome_dismissed', '1')
+    localStorage.setItem('biblio_welcome_dismissed', '1')
     mockCommandResults.get_default_vault_path = rememberedDefaultVaultPath
     mockCommandResults.get_settings = {
       auto_pull_interval_minutes: null,
@@ -639,7 +639,7 @@ describe('App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByText('Help improve Tolaria')).toBeInTheDocument()
+      expect(screen.getByText('Help improve Biblio')).toBeInTheDocument()
     })
 
     fireEvent.click(screen.getByTestId(buttonTestId))
@@ -651,7 +651,7 @@ describe('App', () => {
   })
 
   it('keeps startup on a neutral loading state while the last vault is still resolving', async () => {
-    localStorage.setItem('tolaria_welcome_dismissed', '1')
+    localStorage.setItem('biblio_welcome_dismissed', '1')
 
     let resolveVaultList: ((value: typeof mockVaultList) => void) | null = null
 
@@ -688,7 +688,7 @@ describe('App', () => {
   })
 
   it('shows the missing-vault screen once the resolved active vault is confirmed missing', async () => {
-    localStorage.setItem('tolaria_welcome_dismissed', '1')
+    localStorage.setItem('biblio_welcome_dismissed', '1')
     mockCommandResults.load_vault_list = {
       vaults: [{ label: 'Old Vault', path: '/missing-vault' }],
       active_vault: '/missing-vault',
@@ -705,7 +705,7 @@ describe('App', () => {
   })
 
   it('shows welcome instead of vault-missing when the missing path was not a persisted active vault', async () => {
-    localStorage.setItem('tolaria_welcome_dismissed', '1')
+    localStorage.setItem('biblio_welcome_dismissed', '1')
     mockCommandResults.load_vault_list = {
       vaults: [],
       active_vault: null,
@@ -716,7 +716,7 @@ describe('App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByText('Welcome to Tolaria')).toBeInTheDocument()
+      expect(screen.getByText('Welcome to Biblio')).toBeInTheDocument()
     })
     expect(screen.queryByText('Vault not found')).not.toBeInTheDocument()
     expect(screen.getByTestId('welcome-open-folder')).toHaveTextContent('Open existing vault')

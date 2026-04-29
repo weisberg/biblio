@@ -7,7 +7,7 @@ on:
 
 env:
   # Bump this when Tauri/Rust target artifacts capture stale absolute paths.
-  RUST_TARGET_CACHE_VERSION: v2026-04-14-tolaria
+  RUST_TARGET_CACHE_VERSION: v2026-04-14-biblio
 
 concurrency:
   group: release-stable-${{ github.ref }}
@@ -517,7 +517,7 @@ jobs:
               return 1
             fi
 
-            local normalized_updater="${updater_dir}/Tolaria_${arch}.app.tar.gz"
+            local normalized_updater="${updater_dir}/Biblio_${arch}.app.tar.gz"
             local normalized_sig="${normalized_updater}.sig"
             if [ "$updater_file" != "$normalized_updater" ]; then
               mv "$updater_file" "$normalized_updater"
@@ -534,7 +534,7 @@ jobs:
               return 1
             fi
 
-            local normalized_dmg="${dmg_dir}/Tolaria_${arch}.dmg"
+            local normalized_dmg="${dmg_dir}/Biblio_${arch}.dmg"
             if [ "$dmg_file" != "$normalized_dmg" ]; then
               mv "$dmg_file" "$normalized_dmg"
             fi
@@ -644,7 +644,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.version.outputs.tag }}
-          name: Tolaria ${{ needs.version.outputs.display_version }}
+          name: Biblio ${{ needs.version.outputs.display_version }}
           body_path: release_notes.md
           draft: false
           prerelease: false

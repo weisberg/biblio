@@ -39,7 +39,7 @@ pub struct GitCommit {
     pub date: i64,
 }
 
-const DEFAULT_GITIGNORE: &str = "# Tolaria app files (machine-specific, never commit)\n\
+const DEFAULT_GITIGNORE: &str = "# Biblio app files (machine-specific, never commit)\n\
 .laputa/settings.json\n\
 \n\
 # macOS\n\
@@ -131,8 +131,8 @@ fn git_command_label<'a>(args: &'a [&'a str]) -> &'a str {
 /// Set local user.name and user.email if not already configured.
 fn ensure_author_config(dir: &Path) -> Result<(), String> {
     for (key, fallback) in [
-        ("user.name", "Tolaria"),
-        ("user.email", "vault@tolaria.app"),
+        ("user.name", "Biblio"),
+        ("user.email", "vault@biblio.app"),
     ] {
         let check = git_command()
             .args(["config", key])
@@ -331,7 +331,7 @@ mod tests {
             .output()
             .unwrap();
         git_command()
-            .args(["config", "gpg.program", "/missing/tolaria-test-gpg"])
+            .args(["config", "gpg.program", "/missing/biblio-test-gpg"])
             .current_dir(&vault)
             .output()
             .unwrap();

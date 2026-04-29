@@ -51,12 +51,12 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import {
-  filterTolariaFormattingToolbarItems,
-  getTolariaBlockTypeSelectItems,
-} from './tolariaEditorFormattingConfig'
+  filterBiblioFormattingToolbarItems,
+  getBiblioBlockTypeSelectItems,
+} from './biblioEditorFormattingConfig'
 import { useBlockNoteFormattingToolbarHoverGuard } from './blockNoteFormattingToolbarHoverGuard'
 
-type TolariaBasicTextStyle = 'bold' | 'italic' | 'strike' | 'code'
+type BiblioBasicTextStyle = 'bold' | 'italic' | 'strike' | 'code'
 
 const FORMATTER_CLOSE_GRACE_MS = 160
 
@@ -130,7 +130,7 @@ function useFormattingToolbarCloseGrace({
   return { closeGraceActive, clearCloseGrace }
 }
 
-const TOLARIA_BASIC_TEXT_STYLE_TOOLTIPS = {
+const BIBLIO_BASIC_TEXT_STYLE_TOOLTIPS = {
   bold: {
     label: 'Bold',
     mainTooltip: 'Bold (persists in markdown)',
@@ -152,18 +152,18 @@ const TOLARIA_BASIC_TEXT_STYLE_TOOLTIPS = {
     secondaryTooltip: '`code`',
   },
 } satisfies Record<
-  TolariaBasicTextStyle,
+  BiblioBasicTextStyle,
   { label: string; mainTooltip: string; secondaryTooltip: string }
 >
 
-const TOLARIA_BASIC_TEXT_STYLE_ICONS = {
+const BIBLIO_BASIC_TEXT_STYLE_ICONS = {
   bold: Bold,
   italic: Italic,
   strike: Strikethrough,
   code: Code2,
-} satisfies Record<TolariaBasicTextStyle, LucideIcon>
+} satisfies Record<BiblioBasicTextStyle, LucideIcon>
 
-type TolariaSelectedBlock = ReturnType<
+type BiblioSelectedBlock = ReturnType<
   BlockNoteEditor<BlockSchema, InlineContentSchema, StyleSchema>['getTextCursorPosition']
 >['block']
 
@@ -174,8 +174,8 @@ const FORMATTING_TOOLBAR_FILE_BLOCK_TYPES = new Set([
   'video',
 ])
 
-type TolariaBlockTypeSelectOption = ReturnType<
-  typeof getTolariaBlockTypeSelectItems
+type BiblioBlockTypeSelectOption = ReturnType<
+  typeof getBiblioBlockTypeSelectItems
 >[number] & {
   iconElement: ReactElement
   isSelected: boolean
@@ -197,7 +197,7 @@ function textAlignmentToPlacement(
 }
 
 function editorSupportsTextStyle(
-  style: TolariaBasicTextStyle,
+  style: BiblioBasicTextStyle,
   editor: BlockNoteEditor<BlockSchema, InlineContentSchema, StyleSchema>,
 ) {
   return (
@@ -209,18 +209,18 @@ function editorSupportsTextStyle(
 
 function getSelectedBlocksSafely(
   editor: BlockNoteEditor<BlockSchema, InlineContentSchema, StyleSchema>,
-): TolariaSelectedBlock[] {
+): BiblioSelectedBlock[] {
   try {
     const selectionBlocks = editor.getSelection()?.blocks
     if (selectionBlocks?.length) {
-      return selectionBlocks as TolariaSelectedBlock[]
+      return selectionBlocks as BiblioSelectedBlock[]
     }
   } catch {
     // BlockNote can briefly expose an invalid selection while inline actions remount blocks.
   }
 
   try {
-    return [editor.getTextCursorPosition().block as TolariaSelectedBlock]
+    return [editor.getTextCursorPosition().block as BiblioSelectedBlock]
   } catch {
     return []
   }
@@ -228,9 +228,9 @@ function getSelectedBlocksSafely(
 
 function getCursorBlockSafely(
   editor: BlockNoteEditor<BlockSchema, InlineContentSchema, StyleSchema>,
-): TolariaSelectedBlock | null {
+): BiblioSelectedBlock | null {
   try {
-    return editor.getTextCursorPosition().block as TolariaSelectedBlock
+    return editor.getTextCursorPosition().block as BiblioSelectedBlock
   } catch {
     return null
   }
@@ -243,7 +243,7 @@ function selectionSupportsInlineFormatting(
 }
 
 function getBasicTextStyleButtonState(
-  basicTextStyle: TolariaBasicTextStyle,
+  basicTextStyle: BiblioBasicTextStyle,
   editor: BlockNoteEditor<BlockSchema, InlineContentSchema, StyleSchema>,
 ) {
   if (!editor.isEditable) return undefined
@@ -256,15 +256,15 @@ function getBasicTextStyleButtonState(
 }
 
 function getBlockTypeItemIconElement(
-  item: ReturnType<typeof getTolariaBlockTypeSelectItems>[number],
+  item: ReturnType<typeof getBiblioBlockTypeSelectItems>[number],
 ) {
   const Icon = item.icon
   return <Icon size={16} />
 }
 
 function isSelectedBlockTypeItem(
-  item: ReturnType<typeof getTolariaBlockTypeSelectItems>[number],
-  firstSelectedBlock: TolariaSelectedBlock,
+  item: ReturnType<typeof getBiblioBlockTypeSelectItems>[number],
+  firstSelectedBlock: BiblioSelectedBlock,
 ) {
   if (item.type !== firstSelectedBlock.type) return false
 
@@ -274,11 +274,11 @@ function isSelectedBlockTypeItem(
   )
 }
 
-function getTolariaBlockTypeSelectOptions(
+function getBiblioBlockTypeSelectOptions(
   editor: BlockNoteEditor<BlockSchema, InlineContentSchema, StyleSchema>,
-  firstSelectedBlock: TolariaSelectedBlock,
+  firstSelectedBlock: BiblioSelectedBlock,
 ) {
-  return getTolariaBlockTypeSelectItems()
+  return getBiblioBlockTypeSelectItems()
     .filter((item) =>
       editorHasBlockWithType(
         editor,
@@ -318,8 +318,8 @@ function getFormattingToolbarAnchorElement(
 
 function updateSelectedBlocksToType(
   editor: BlockNoteEditor<BlockSchema, InlineContentSchema, StyleSchema>,
-  selectedBlocks: TolariaSelectedBlock[],
-  item: ReturnType<typeof getTolariaBlockTypeSelectItems>[number],
+  selectedBlocks: BiblioSelectedBlock[],
+  item: ReturnType<typeof getBiblioBlockTypeSelectItems>[number],
 ) {
   editor.focus()
   editor.transact(() => {
@@ -332,10 +332,10 @@ function updateSelectedBlocksToType(
   })
 }
 
-function TolariaBasicTextStyleButton({
+function BiblioBasicTextStyleButton({
   basicTextStyle,
 }: {
-  basicTextStyle: TolariaBasicTextStyle
+  basicTextStyle: BiblioBasicTextStyle
 }) {
   const Components = useComponentsContext()!
   const editor = useBlockNoteEditor<
@@ -355,8 +355,8 @@ function TolariaBasicTextStyleButton({
 
   if (buttonState === undefined) return null
 
-  const Icon = TOLARIA_BASIC_TEXT_STYLE_ICONS[basicTextStyle]
-  const copy = TOLARIA_BASIC_TEXT_STYLE_TOOLTIPS[basicTextStyle]
+  const Icon = BIBLIO_BASIC_TEXT_STYLE_ICONS[basicTextStyle]
+  const copy = BIBLIO_BASIC_TEXT_STYLE_TOOLTIPS[basicTextStyle]
 
   return (
     <Components.FormattingToolbar.Button
@@ -372,7 +372,7 @@ function TolariaBasicTextStyleButton({
   )
 }
 
-function TolariaBlockTypeSelect() {
+function BiblioBlockTypeSelect() {
   const editor = useBlockNoteEditor<
     BlockSchema,
     InlineContentSchema,
@@ -380,19 +380,19 @@ function TolariaBlockTypeSelect() {
   >()
   const selectedBlocks = useEditorState({
     editor,
-    selector: ({ editor }): TolariaSelectedBlock[] => getSelectedBlocksSafely(editor),
+    selector: ({ editor }): BiblioSelectedBlock[] => getSelectedBlocksSafely(editor),
   })
   const firstSelectedBlock = selectedBlocks[0] ?? null
   const selectItems = useMemo(
     () => (
       firstSelectedBlock
-        ? getTolariaBlockTypeSelectOptions(editor, firstSelectedBlock)
+        ? getBiblioBlockTypeSelectOptions(editor, firstSelectedBlock)
         : []
     ),
     [editor, firstSelectedBlock],
   )
   const selectedItem = selectItems.find(
-    (item): item is TolariaBlockTypeSelectOption => item.isSelected,
+    (item): item is BiblioBlockTypeSelectOption => item.isSelected,
   )
 
   if (!selectedItem || !editor.isEditable) return null
@@ -441,13 +441,13 @@ function replaceToolbarControls(items: ReactElement[]) {
   return items.flatMap((item) => {
     switch (String(item.key)) {
       case 'blockTypeSelect':
-        return [<TolariaBlockTypeSelect key={item.key} />]
+        return [<BiblioBlockTypeSelect key={item.key} />]
       case 'boldStyleButton':
-        return [<TolariaBasicTextStyleButton basicTextStyle="bold" key={item.key} />]
+        return [<BiblioBasicTextStyleButton basicTextStyle="bold" key={item.key} />]
       case 'italicStyleButton':
-        return [<TolariaBasicTextStyleButton basicTextStyle="italic" key={item.key} />]
+        return [<BiblioBasicTextStyleButton basicTextStyle="italic" key={item.key} />]
       case 'strikeStyleButton':
-        return [<TolariaBasicTextStyleButton basicTextStyle="strike" key={item.key} />]
+        return [<BiblioBasicTextStyleButton basicTextStyle="strike" key={item.key} />]
       default:
         return [item]
     }
@@ -462,26 +462,26 @@ function insertInlineCodeButton(items: ReactElement[]) {
 
   return [
     ...items.slice(0, strikeButtonIndex + 1),
-    <TolariaBasicTextStyleButton basicTextStyle="code" key="codeStyleButton" />,
+    <BiblioBasicTextStyleButton basicTextStyle="code" key="codeStyleButton" />,
     ...items.slice(strikeButtonIndex + 1),
   ]
 }
 
-function getTolariaFormattingToolbarItems() {
+function getBiblioFormattingToolbarItems() {
   return insertInlineCodeButton(
     replaceToolbarControls(
-      filterTolariaFormattingToolbarItems(
+      filterBiblioFormattingToolbarItems(
         getFormattingToolbarItems(),
       ),
     ),
   )
 }
 
-export function TolariaFormattingToolbar() {
-  return <FormattingToolbar>{getTolariaFormattingToolbarItems()}</FormattingToolbar>
+export function BiblioFormattingToolbar() {
+  return <FormattingToolbar>{getBiblioFormattingToolbarItems()}</FormattingToolbar>
 }
 
-export function TolariaFormattingToolbarController(props: {
+export function BiblioFormattingToolbarController(props: {
   formattingToolbar?: FC<FormattingToolbarProps>;
   floatingUIOptions?: FloatingUIOptions;
 }) {
@@ -586,7 +586,7 @@ export function TolariaFormattingToolbarController(props: {
     ],
   )
 
-  const Component = props.formattingToolbar || TolariaFormattingToolbar
+  const Component = props.formattingToolbar || BiblioFormattingToolbar
 
   return (
     <PositionPopover position={position} {...floatingUIOptions}>

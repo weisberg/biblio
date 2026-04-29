@@ -1,15 +1,15 @@
 export const APP_STORAGE_KEYS = {
-  theme: 'tolaria-theme',
-  zoom: 'tolaria:zoom-level',
-  viewMode: 'tolaria-view-mode',
-  tagColors: 'tolaria:tag-color-overrides',
-  statusColors: 'tolaria:status-color-overrides',
-  propertyModes: 'tolaria:display-mode-overrides',
-  configMigrationFlag: 'tolaria:config-migrated-to-vault',
-  legacyMigrationFlag: 'tolaria:legacy-storage-migrated',
-  sortPreferences: 'tolaria-sort-preferences',
-  sidebarCollapsed: 'tolaria:sidebar-collapsed',
-  welcomeDismissed: 'tolaria_welcome_dismissed',
+  theme: 'biblio-theme',
+  zoom: 'biblio:zoom-level',
+  viewMode: 'biblio-view-mode',
+  tagColors: 'biblio:tag-color-overrides',
+  statusColors: 'biblio:status-color-overrides',
+  propertyModes: 'biblio:display-mode-overrides',
+  configMigrationFlag: 'biblio:config-migrated-to-vault',
+  legacyMigrationFlag: 'biblio:legacy-storage-migrated',
+  sortPreferences: 'biblio-sort-preferences',
+  sidebarCollapsed: 'biblio:sidebar-collapsed',
+  welcomeDismissed: 'biblio_welcome_dismissed',
 } as const
 
 export const LEGACY_APP_STORAGE_KEYS = {

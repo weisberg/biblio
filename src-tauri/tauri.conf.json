@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "Tolaria",
+  "productName": "Biblio",
   "version": "0.1.0",
-  "identifier": "club.refactoring.tolaria",
+  "identifier": "club.refactoring.biblio",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5202",
@@ -13,7 +13,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "Tolaria",
+        "title": "Biblio",
         "width": 1400,
         "height": 900,
         "minWidth": 480,
@@ -33,7 +33,7 @@
         "connect-src": "'self' ipc: http://ipc.localhost ws://localhost:9710 ws://127.0.0.1:9710 ws://localhost:9711 ws://127.0.0.1:9711 https:",
         "img-src": "'self' asset: http://asset.localhost data: blob: https:",
         "style-src": "'self' 'unsafe-inline' https://fonts.googleapis.com",
-        "style-src-elem": "'self' 'nonce-tolaria-runtime-style' https://fonts.googleapis.com",
+        "style-src-elem": "'self' 'nonce-biblio-runtime-style' https://fonts.googleapis.com",
         "style-src-attr": "'unsafe-inline'",
         "font-src": "'self' data: https://fonts.gstatic.com",
         "media-src": "'self' data: blob: https:",
@@ -68,7 +68,7 @@
   "plugins": {
     "updater": {
       "endpoints": [
-        "https://refactoringhq.github.io/tolaria/stable/latest.json"
+        "https://refactoringhq.github.io/biblio/stable/latest.json"
       ],
       "windows": {
         "installMode": "passive"

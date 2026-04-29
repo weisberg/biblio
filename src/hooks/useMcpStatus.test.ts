@@ -116,7 +116,7 @@ describe('useMcpStatus', () => {
       name: 'connects external AI tools for the current vault on demand',
       overrideKey: 'register_mcp_tools' as const,
       overrideValue: 'registered',
-      toastFragment: 'Tolaria external AI tools connected successfully',
+      toastFragment: 'Biblio external AI tools connected successfully',
     },
     {
       action: 'connect' as const,
@@ -136,7 +136,7 @@ describe('useMcpStatus', () => {
       name: 'disconnects external AI tools explicitly',
       overrideKey: 'remove_mcp_tools' as const,
       overrideValue: 'removed',
-      toastFragment: 'Tolaria external AI tools disconnected successfully',
+      toastFragment: 'Biblio external AI tools disconnected successfully',
     },
     {
       action: 'disconnect' as const,

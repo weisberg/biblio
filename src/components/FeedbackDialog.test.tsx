@@ -3,11 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { FeedbackDialog } from './FeedbackDialog'
 import {
   REFACTORING_HOME_URL,
-  TOLARIA_GITHUB_CONTRIBUTING_URL,
-  TOLARIA_GITHUB_DISCUSSIONS_URL,
-  TOLARIA_GITHUB_ISSUES_URL,
-  TOLARIA_GITHUB_PULL_REQUESTS_URL,
-  TOLARIA_PRODUCT_BOARD_URL,
+  BIBLIO_GITHUB_CONTRIBUTING_URL,
+  BIBLIO_GITHUB_DISCUSSIONS_URL,
+  BIBLIO_GITHUB_ISSUES_URL,
+  BIBLIO_GITHUB_PULL_REQUESTS_URL,
+  BIBLIO_PRODUCT_BOARD_URL,
 } from '../constants/feedback'
 import { APP_COMMAND_EVENT_NAME, APP_COMMAND_IDS } from '../hooks/appCommandDispatcher'
 import { rememberFeedbackDialogOpener } from '../lib/feedbackDialogOpener'
@@ -34,7 +34,7 @@ describe('FeedbackDialog', () => {
   it('renders the contribution paths when open', () => {
     render(<FeedbackDialog open={true} onClose={vi.fn()} buildNumber="b281" releaseChannel="alpha" />)
     expect(screen.getByTestId('feedback-dialog')).toBeInTheDocument()
-    expect(screen.getByText('Contribute to Tolaria')).toBeInTheDocument()
+    expect(screen.getByText('Contribute to Biblio')).toBeInTheDocument()
     expect(screen.getByText('Pick the path that fits what you want to do! Any type of help is appreciated')).toBeInTheDocument()
     expect(screen.getByText('Sponsor / Support')).toBeInTheDocument()
     expect(screen.getByText('Feature requests')).toBeInTheDocument()
@@ -43,7 +43,7 @@ describe('FeedbackDialog', () => {
     expect(screen.getByText('Report a bug')).toBeInTheDocument()
     expect(screen.getByText(/Luca here .* newsletter for 170K\+ engineers/i)).toBeInTheDocument()
     expect(screen.getByText(/private community of 2000\+ engineers/i)).toBeInTheDocument()
-    expect(screen.getByText(/Tolaria is FOSS and always will be/i)).toBeInTheDocument()
+    expect(screen.getByText(/Biblio is FOSS and always will be/i)).toBeInTheDocument()
     expect(screen.getByText('Search on the board first, upvote existing ideas, and create new posts when genuinely new!')).toBeInTheDocument()
     expect(screen.getByText('Use Discussions for questions, conversations, show & tell, and community context.')).toBeInTheDocument()
     expect(screen.getByText('Small, focused PRs are welcome. Check the board first so you build the right things!')).toBeInTheDocument()
@@ -69,11 +69,11 @@ describe('FeedbackDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open GitHub Issues' }))
 
     await waitFor(() => expect(openExternalUrl).toHaveBeenNthCalledWith(1, REFACTORING_HOME_URL))
-    expect(openExternalUrl).toHaveBeenNthCalledWith(2, TOLARIA_PRODUCT_BOARD_URL)
-    expect(openExternalUrl).toHaveBeenNthCalledWith(3, TOLARIA_GITHUB_DISCUSSIONS_URL)
-    expect(openExternalUrl).toHaveBeenNthCalledWith(4, TOLARIA_GITHUB_PULL_REQUESTS_URL)
-    expect(openExternalUrl).toHaveBeenNthCalledWith(5, TOLARIA_GITHUB_CONTRIBUTING_URL)
-    expect(openExternalUrl).toHaveBeenNthCalledWith(6, TOLARIA_GITHUB_ISSUES_URL)
+    expect(openExternalUrl).toHaveBeenNthCalledWith(2, BIBLIO_PRODUCT_BOARD_URL)
+    expect(openExternalUrl).toHaveBeenNthCalledWith(3, BIBLIO_GITHUB_DISCUSSIONS_URL)
+    expect(openExternalUrl).toHaveBeenNthCalledWith(4, BIBLIO_GITHUB_PULL_REQUESTS_URL)
+    expect(openExternalUrl).toHaveBeenNthCalledWith(5, BIBLIO_GITHUB_CONTRIBUTING_URL)
+    expect(openExternalUrl).toHaveBeenNthCalledWith(6, BIBLIO_GITHUB_ISSUES_URL)
     expect(onClose).not.toHaveBeenCalled()
     expect(screen.getByTestId('feedback-dialog')).toBeInTheDocument()
   })
@@ -90,7 +90,7 @@ describe('FeedbackDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Copy sanitized diagnostics' }))
 
     await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
-    expect(writeText.mock.calls[0]?.[0]).toContain('Tolaria sanitized diagnostics')
+    expect(writeText.mock.calls[0]?.[0]).toContain('Biblio sanitized diagnostics')
     expect(writeText.mock.calls[0]?.[0]).toContain('Build: b281')
     expect(writeText.mock.calls[0]?.[0]).toContain('Release channel: alpha')
     expect(screen.getByText('Diagnostics copied.')).toBeInTheDocument()
@@ -103,7 +103,7 @@ describe('FeedbackDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open Product Board' }))
 
     expect(await screen.findByText(/couldn’t open Product Board automatically/i)).toBeInTheDocument()
-    expect(screen.getByText(TOLARIA_PRODUCT_BOARD_URL)).toBeInTheDocument()
+    expect(screen.getByText(BIBLIO_PRODUCT_BOARD_URL)).toBeInTheDocument()
   })
 
   it('closes when pressing Escape', () => {

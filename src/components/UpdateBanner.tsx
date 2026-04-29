@@ -67,7 +67,7 @@ function renderAvailableContent(status: Extract<VisibleUpdateStatus, { state: 'a
     <>
       <Download size={14} style={iconStyle} />
       <span>
-        <strong>Tolaria {status.displayVersion}</strong> is available
+        <strong>Biblio {status.displayVersion}</strong> is available
       </span>
       <Button
         type="button"
@@ -107,7 +107,7 @@ function renderDownloadingContent(status: Extract<VisibleUpdateStatus, { state: 
   return (
     <>
       <RefreshCw size={14} style={{ ...iconStyle, animation: 'spin 1s linear infinite' }} />
-      <span>Downloading Tolaria {status.displayVersion}...</span>
+      <span>Downloading Biblio {status.displayVersion}...</span>
       <div style={progressTrackStyle}>
         <div
           data-testid="update-progress"
@@ -130,7 +130,7 @@ function renderReadyContent(status: Extract<VisibleUpdateStatus, { state: 'ready
     <>
       <RefreshCw size={14} style={readyIconStyle} />
       <span>
-        <strong>Tolaria {status.displayVersion}</strong> is ready - restart to apply
+        <strong>Biblio {status.displayVersion}</strong> is ready - restart to apply
       </span>
       <Button
         type="button"

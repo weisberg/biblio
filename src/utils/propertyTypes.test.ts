@@ -183,7 +183,7 @@ describe('display mode overrides (localStorage)', () => {
   })
 
   it('handles corrupted localStorage gracefully', () => {
-    localStorage.setItem('tolaria:display-mode-overrides', 'not valid json')
+    localStorage.setItem('biblio:display-mode-overrides', 'not valid json')
     expect(loadDisplayModeOverrides()).toEqual({})
   })
 })

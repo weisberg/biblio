@@ -16,7 +16,7 @@
        defaultProtocol: DEFAULT_LINK_PROTOCOL,
        // only call this once if we have multiple editors installed. Or fix https://github.com/ueberdosis/tiptap/issues/5450
 -      protocols: LINKIFY_INITIALIZED ? [] : VALID_LINK_PROTOCOLS,
-+      // Tolaria pre-registers BlockNote's non-native protocols before linkify initializes.
++      // Biblio pre-registers BlockNote's non-native protocols before linkify initializes.
 +      protocols: [],
      }),
      ...(Object.values(editor.schema.styleSpecs).map((styleSpec) => {
@@ -28,7 +28,7 @@
    })
  );
 -let fe = !1;
-+const bnLinkifyProtocolFlag = "__tolariaBlockNoteLinkifyProtocolsRegistered";
++const bnLinkifyProtocolFlag = "__biblioBlockNoteLinkifyProtocolsRegistered";
 +const bnGlobalObject = typeof globalThis > "u" ? void 0 : globalThis;
 +let fe = Boolean(bnGlobalObject && bnGlobalObject[bnLinkifyProtocolFlag]);
  function mn(o, e) {
@@ -39,7 +39,7 @@
        defaultProtocol: Ct,
        // only call this once if we have multiple editors installed. Or fix https://github.com/ueberdosis/tiptap/issues/5450
 -      protocols: fe ? [] : Bt
-+      // Tolaria pre-registers BlockNote's non-native protocols before linkify initializes.
++      // Biblio pre-registers BlockNote's non-native protocols before linkify initializes.
 +      protocols: []
      }),
      ...Object.values(o.schema.styleSpecs).map((n) => n.implementation.mark.configure({

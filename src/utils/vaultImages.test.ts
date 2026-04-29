@@ -53,7 +53,7 @@ describe('resolveImageUrls', () => {
 
   it('rewrites legacy asset URLs from a different vault', () => {
     tauriMode = true
-    const legacyUrl = assetUrl('/Users/luca/Workspace/tolaria-getting-started/attachments/CleanShot.png')
+    const legacyUrl = assetUrl('/Users/luca/Workspace/biblio-getting-started/attachments/CleanShot.png')
     const markdown = `![CleanShot](${legacyUrl})`
 
     expect(resolveImageUrls(markdown, '/Users/john/Documents/Getting Started')).toBe(

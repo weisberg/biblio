@@ -1,4 +1,4 @@
-# AGENTS.md — Tolaria App
+# AGENTS.md — Biblio App
 
 > Quick links: [Architecture](docs/ARCHITECTURE.md) · [Abstractions](docs/ABSTRACTIONS.md) · [Wireframes](ui-design.pen)
 
@@ -41,8 +41,8 @@ BASE_URL="http://localhost:5201" npx playwright test tests/smoke/<slug>.spec.ts
 ```bash
 pnpm tauri dev &
 sleep 10
-bash ~/.openclaw/skills/tolaria-qa/scripts/focus-app.sh laputa
-bash ~/.openclaw/skills/tolaria-qa/scripts/screenshot.sh /tmp/qa-native.png
+bash ~/.openclaw/skills/biblio-qa/scripts/focus-app.sh laputa
+bash ~/.openclaw/skills/biblio-qa/scripts/screenshot.sh /tmp/qa-native.png
 ```
 
 Use `osascript` for keyboard interactions. Write result as Todoist comment (✅ or ❌). **⚠️ WKWebView:** `osascript keystroke` blocked inside editor — rely on Playwright for text input features.
@@ -143,7 +143,7 @@ Open `ui-design.pen` first (light mode). Create `design/<slug>.pen` for the task
 | Toggle/switch | `Switch` or `ToggleGroup` from shadcn/ui |
 | Dialog/modal | `Dialog` from shadcn/ui |
 
-**When in doubt:** search `src/components/` for an existing component before building new. **Visual language:** all new UI must feel native to Tolaria — if it looks like a browser default, it's wrong.
+**When in doubt:** search `src/components/` for an existing component before building new. **Visual language:** all new UI must feel native to Biblio — if it looks like a browser default, it's wrong.
 
 ---
 
@@ -158,9 +158,9 @@ Open `ui-design.pen` first (light mode). Create `design/<slug>.pen` for the task
 ### QA scripts
 
 ```bash
-bash ~/.openclaw/skills/tolaria-qa/scripts/focus-app.sh laputa
-bash ~/.openclaw/skills/tolaria-qa/scripts/screenshot.sh /tmp/out.png
-bash ~/.openclaw/skills/tolaria-qa/scripts/shortcut.sh "command" "s"
+bash ~/.openclaw/skills/biblio-qa/scripts/focus-app.sh laputa
+bash ~/.openclaw/skills/biblio-qa/scripts/screenshot.sh /tmp/out.png
+bash ~/.openclaw/skills/biblio-qa/scripts/shortcut.sh "command" "s"
 ```
 
 ### Diagrams

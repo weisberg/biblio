@@ -8,7 +8,7 @@ const FIXTURE_VAULT = path.resolve('tests/fixtures/test-vault')
 const FIXTURE_VAULT_READY_TIMEOUT = 30_000
 const FIXTURE_VAULT_REMOVE_RETRIES = 10
 const FIXTURE_VAULT_REMOVE_RETRY_DELAY_MS = 100
-const CLAUDE_CODE_ONBOARDING_DISMISSED_KEY = 'tolaria:claude-code-onboarding-dismissed'
+const CLAUDE_CODE_ONBOARDING_DISMISSED_KEY = 'biblio:claude-code-onboarding-dismissed'
 type FixtureCommandArgs = Record<string, unknown> | undefined
 
 interface FixtureVaultPageArgs {

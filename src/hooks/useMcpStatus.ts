@@ -23,14 +23,14 @@ async function fetchMcpStatus(vaultPath: string): Promise<McpStatus> {
 
 function connectSuccessToast(result: string): string {
   return result === 'registered'
-    ? 'Tolaria external AI tools connected successfully'
-    : 'Tolaria external AI tools setup refreshed successfully'
+    ? 'Biblio external AI tools connected successfully'
+    : 'Biblio external AI tools setup refreshed successfully'
 }
 
 function disconnectSuccessToast(result: string): string {
   return result === 'removed'
-    ? 'Tolaria external AI tools disconnected successfully'
-    : 'Tolaria external AI tools were already disconnected'
+    ? 'Biblio external AI tools disconnected successfully'
+    : 'Biblio external AI tools were already disconnected'
 }
 
 /**

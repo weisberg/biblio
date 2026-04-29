@@ -5,7 +5,7 @@ test.describe('Contribute modal', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
       const openedUrls: string[] = []
-      Object.defineProperty(window, '__tolariaOpenedUrls', {
+      Object.defineProperty(window, '__biblioOpenedUrls', {
         configurable: true,
         value: openedUrls,
       })
@@ -15,7 +15,7 @@ test.describe('Contribute modal', () => {
       }) as typeof window.open
 
       const copiedBundles: string[] = []
-      Object.defineProperty(window, '__tolariaCopiedBundles', {
+      Object.defineProperty(window, '__biblioCopiedBundles', {
         configurable: true,
         value: copiedBundles,
       })
@@ -38,41 +38,41 @@ test.describe('Contribute modal', () => {
     await executeCommand(page, 'Contribute')
 
     await expect(page.getByTestId('feedback-dialog')).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Contribute to Tolaria' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Contribute to Biblio' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Check out Refactoring' })).toBeFocused()
 
     await page.keyboard.press('Enter')
-    await expect.poll(async () => page.evaluate(() => (window as typeof window & { __tolariaOpenedUrls: string[] }).__tolariaOpenedUrls)).toContain('https://refactoring.fm/')
+    await expect.poll(async () => page.evaluate(() => (window as typeof window & { __biblioOpenedUrls: string[] }).__biblioOpenedUrls)).toContain('https://refactoring.fm/')
 
     await page.keyboard.press('Tab')
     await expect(page.getByRole('button', { name: 'Open Product Board' })).toBeFocused()
     await page.keyboard.press('Enter')
-    await expect.poll(async () => page.evaluate(() => (window as typeof window & { __tolariaOpenedUrls: string[] }).__tolariaOpenedUrls)).toContain('https://tolaria.canny.io/')
+    await expect.poll(async () => page.evaluate(() => (window as typeof window & { __biblioOpenedUrls: string[] }).__biblioOpenedUrls)).toContain('https://biblio.canny.io/')
 
     await page.keyboard.press('Tab')
     await expect(page.getByRole('button', { name: 'Open Discussions' })).toBeFocused()
     await page.keyboard.press('Space')
-    await expect.poll(async () => page.evaluate(() => (window as typeof window & { __tolariaOpenedUrls: string[] }).__tolariaOpenedUrls)).toContain('https://github.com/refactoringhq/tolaria/discussions')
+    await expect.poll(async () => page.evaluate(() => (window as typeof window & { __biblioOpenedUrls: string[] }).__biblioOpenedUrls)).toContain('https://github.com/refactoringhq/biblio/discussions')
 
     await page.keyboard.press('Tab')
     await expect(page.getByRole('button', { name: 'Open Pull Requests' })).toBeFocused()
     await page.keyboard.press('Enter')
-    await expect.poll(async () => page.evaluate(() => (window as typeof window & { __tolariaOpenedUrls: string[] }).__tolariaOpenedUrls)).toContain('https://github.com/refactoringhq/tolaria/pulls')
+    await expect.poll(async () => page.evaluate(() => (window as typeof window & { __biblioOpenedUrls: string[] }).__biblioOpenedUrls)).toContain('https://github.com/refactoringhq/biblio/pulls')
 
     await page.keyboard.press('Tab')
     await expect(page.getByRole('button', { name: 'Open Contributing Guide' })).toBeFocused()
     await page.keyboard.press('Space')
-    await expect.poll(async () => page.evaluate(() => (window as typeof window & { __tolariaOpenedUrls: string[] }).__tolariaOpenedUrls)).toContain('https://github.com/refactoringhq/tolaria/blob/main/CONTRIBUTING.md')
+    await expect.poll(async () => page.evaluate(() => (window as typeof window & { __biblioOpenedUrls: string[] }).__biblioOpenedUrls)).toContain('https://github.com/refactoringhq/biblio/blob/main/CONTRIBUTING.md')
 
     await page.keyboard.press('Tab')
     await expect(page.getByRole('button', { name: 'Open GitHub Issues' })).toBeFocused()
     await page.keyboard.press('Enter')
-    await expect.poll(async () => page.evaluate(() => (window as typeof window & { __tolariaOpenedUrls: string[] }).__tolariaOpenedUrls)).toContain('https://github.com/refactoringhq/tolaria/issues')
+    await expect.poll(async () => page.evaluate(() => (window as typeof window & { __biblioOpenedUrls: string[] }).__biblioOpenedUrls)).toContain('https://github.com/refactoringhq/biblio/issues')
 
     await page.keyboard.press('Tab')
     await expect(page.getByRole('button', { name: 'Copy sanitized diagnostics' })).toBeFocused()
     await page.keyboard.press('Space')
-    await expect.poll(async () => page.evaluate(() => (window as typeof window & { __tolariaCopiedBundles: string[] }).__tolariaCopiedBundles.length)).toBe(1)
+    await expect.poll(async () => page.evaluate(() => (window as typeof window & { __biblioCopiedBundles: string[] }).__biblioCopiedBundles.length)).toBe(1)
 
     await page.keyboard.press('Escape')
     await expect(page.getByTestId('feedback-dialog')).not.toBeVisible()

@@ -141,7 +141,7 @@ mod tests {
             .output()
             .unwrap();
         git_command()
-            .args(["config", "gpg.program", "/missing/tolaria-test-gpg"])
+            .args(["config", "gpg.program", "/missing/biblio-test-gpg"])
             .current_dir(vault)
             .output()
             .unwrap();

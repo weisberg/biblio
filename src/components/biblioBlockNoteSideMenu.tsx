@@ -8,7 +8,7 @@ import {
   useDictionary,
 } from '@blocknote/react'
 
-function TolariaDragHandleMenu() {
+function BiblioDragHandleMenu() {
   const dict = useDictionary()
 
   return (
@@ -20,6 +20,6 @@ function TolariaDragHandleMenu() {
   )
 }
 
-export function TolariaSideMenu(props: SideMenuProps) {
-  return <SideMenu {...props} dragHandleMenu={TolariaDragHandleMenu} />
+export function BiblioSideMenu(props: SideMenuProps) {
+  return <SideMenu {...props} dragHandleMenu={BiblioDragHandleMenu} />
 }

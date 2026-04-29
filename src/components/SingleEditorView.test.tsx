@@ -172,20 +172,20 @@ vi.mock('./blockNoteSideMenuHoverGuard', () => ({
   useBlockNoteSideMenuHoverGuard: (containerRef: unknown) => state.hoverGuardMock(containerRef),
 }))
 
-vi.mock('./tolariaEditorFormattingConfig', () => ({
-  getTolariaSlashMenuItems: vi.fn(async () => []),
+vi.mock('./biblioEditorFormattingConfig', () => ({
+  getBiblioSlashMenuItems: vi.fn(async () => []),
 }))
 
-vi.mock('./tolariaEditorFormatting', () => ({
-  TolariaFormattingToolbar: () => <div data-testid="tolaria-formatting-toolbar" />,
-  TolariaFormattingToolbarController: (props: Record<string, unknown>) => {
+vi.mock('./biblioEditorFormatting', () => ({
+  BiblioFormattingToolbar: () => <div data-testid="biblio-formatting-toolbar" />,
+  BiblioFormattingToolbarController: (props: Record<string, unknown>) => {
     state.capturedToolbarProps = props
-    return <div data-testid="tolaria-formatting-toolbar-controller" />
+    return <div data-testid="biblio-formatting-toolbar-controller" />
   },
 }))
 
-vi.mock('./tolariaBlockNoteSideMenu', () => ({
-  TolariaSideMenu: () => <div data-testid="tolaria-side-menu" />,
+vi.mock('./biblioBlockNoteSideMenu', () => ({
+  BiblioSideMenu: () => <div data-testid="biblio-side-menu" />,
 }))
 
 vi.mock('./useEditorLinkActivation', () => ({

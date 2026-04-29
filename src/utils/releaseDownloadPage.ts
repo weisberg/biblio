@@ -1,4 +1,4 @@
-const RELEASE_HISTORY_URL = 'https://refactoringhq.github.io/tolaria/'
+const RELEASE_HISTORY_URL = 'https://refactoringhq.github.io/biblio/'
 
 type StablePlatformKey =
   | 'darwin-aarch64'
@@ -45,19 +45,19 @@ type DownloadPageContent = {
 
 const PLATFORM_METADATA: Record<StablePlatformKey, { buttonLabel: string; label: string }> = {
   'darwin-aarch64': {
-    buttonLabel: 'Download Tolaria for macOS Apple Silicon',
+    buttonLabel: 'Download Biblio for macOS Apple Silicon',
     label: 'macOS Apple Silicon',
   },
   'darwin-x86_64': {
-    buttonLabel: 'Download Tolaria for Intel Mac',
+    buttonLabel: 'Download Biblio for Intel Mac',
     label: 'macOS Intel',
   },
   'linux-x86_64': {
-    buttonLabel: 'Download Tolaria for Linux',
+    buttonLabel: 'Download Biblio for Linux',
     label: 'Linux',
   },
   'windows-x86_64': {
-    buttonLabel: 'Download Tolaria for Windows',
+    buttonLabel: 'Download Biblio for Windows',
     label: 'Windows',
   },
 }
@@ -373,17 +373,17 @@ function buildStableDownloadPageContent(
   if (Object.keys(downloads).length > 0) {
     return {
       helperText: 'If the download does not start automatically, use one of the platform links below.',
-      message: 'Preparing the latest stable Tolaria download for your platform.',
+      message: 'Preparing the latest stable Biblio download for your platform.',
       shouldRedirect: true,
-      title: 'Tolaria Stable Download',
+      title: 'Biblio Stable Download',
     }
   }
 
   return {
     helperText: 'Use the button below to check the latest release history.',
-    message: 'No stable Tolaria downloads are available yet.',
+    message: 'No stable Biblio downloads are available yet.',
     shouldRedirect: false,
-    title: 'Tolaria Stable Download Unavailable',
+    title: 'Biblio Stable Download Unavailable',
   }
 }
 
@@ -449,7 +449,7 @@ function buildRedirectMarkup(downloads: StableDownloadTargets): string {
         if (message) {
           message.textContent = requiresMacChoice
             ? 'Choose the Apple Silicon or Intel Mac download below.'
-            : 'Redirecting to the latest stable Tolaria download for ' + resolvedTarget.label + '.';
+            : 'Redirecting to the latest stable Biblio download for ' + resolvedTarget.label + '.';
         }
         if (!requiresMacChoice) {
           window.location.replace(resolvedTarget.url);

@@ -33,7 +33,7 @@ const ZOOM_RESET_TOOLTIP = {
   label: 'Reset the zoom level',
   shortcut: formatShortcutDisplay({ display: '⌘0' }),
 } as const
-const FEEDBACK_TOOLTIP = { label: 'Contribute to Tolaria' } as const
+const FEEDBACK_TOOLTIP = { label: 'Contribute to Biblio' } as const
 const LIGHT_MODE_TOOLTIP = { label: 'Switch to light mode' } as const
 const DARK_MODE_TOOLTIP = { label: 'Switch to dark mode' } as const
 const SETTINGS_TOOLTIP = {

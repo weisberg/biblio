@@ -2,7 +2,7 @@ use serde::Serialize;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command};
 
-const MCP_SERVER_NAME: &str = "tolaria";
+const MCP_SERVER_NAME: &str = "biblio";
 const LEGACY_MCP_SERVER_NAME: &str = "laputa";
 
 /// Status of the MCP server installation.
@@ -198,7 +198,7 @@ fn register_mcp_to_configs(entry: &serde_json::Value, config_paths: &[PathBuf]) 
     status.to_string()
 }
 
-/// Register Tolaria as an MCP server in external AI tool config files.
+/// Register Biblio as an MCP server in external AI tool config files.
 pub fn register_mcp(vault_path: &str) -> Result<String, String> {
     let server_dir = mcp_server_dir()?;
     let index_js = server_dir.join("index.js").to_string_lossy().into_owned();
@@ -208,7 +208,7 @@ pub fn register_mcp(vault_path: &str) -> Result<String, String> {
     Ok(register_mcp_to_configs(&entry, &mcp_config_paths()))
 }
 
-/// Insert or update the Tolaria entry in an MCP config file.
+/// Insert or update the Biblio entry in an MCP config file.
 fn upsert_mcp_config(config_path: &Path, entry: &serde_json::Value) -> Result<bool, String> {
     if let Some(parent) = config_path.parent() {
         std::fs::create_dir_all(parent)
@@ -310,7 +310,7 @@ pub fn remove_mcp() -> String {
 
 /// Check whether the MCP server is properly installed and registered.
 ///
-/// Returns `Installed` when the Tolaria entry exists for the active vault in
+/// Returns `Installed` when the Biblio entry exists for the active vault in
 /// an external AI tool config and the referenced index.js file is present.
 /// Otherwise returns `NotInstalled`.
 pub fn check_mcp_status(vault_path: &str) -> McpStatus {
@@ -722,7 +722,7 @@ mod tests {
         let config_path = tmp.path().join("mcp.json");
         let config = serde_json::json!({
             "mcpServers": {
-                "tolaria": { "command": "node", "args": ["/index.js"] },
+                "biblio": { "command": "node", "args": ["/index.js"] },
                 "laputa": { "command": "node", "args": ["/legacy.js"] },
                 "other-server": { "command": "other", "args": [] }
             }
@@ -762,7 +762,7 @@ mod tests {
         let config_path = tmp.path().join("mcp.json");
         let config = serde_json::json!({
             "mcpServers": {
-                "tolaria": {
+                "biblio": {
                     "command": "node",
                     "args": [index_js.to_string_lossy()],
                     "env": { "VAULT_PATH": vault_path.to_string_lossy() }

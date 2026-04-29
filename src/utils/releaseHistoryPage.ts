@@ -631,14 +631,14 @@ export function buildReleaseHistoryPage(releasesPayload: unknown): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tolaria — Release History</title>
+  <title>Biblio — Release History</title>
   <style>${RELEASE_HISTORY_PAGE_STYLES}
   </style>
 </head>
 <body>
   <main>
     <header>
-      <h1>Tolaria Release History</h1>
+      <h1>Biblio Release History</h1>
       <p class="subtitle">Stable builds appear when a stable-vYYYY.M.D tag is promoted. Alpha builds update on every push to main.</p>
       <p class="keyboard-hint">Use Tab to reach the channel picker, then use the arrow keys to switch between Stable and Alpha.</p>
     </header>

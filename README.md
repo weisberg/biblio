@@ -1,8 +1,8 @@
-![Latest stable](https://img.shields.io/github/v/release/refactoringhq/tolaria?display_name=tag) [![CI](https://github.com/refactoringhq/tolaria/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/refactoringhq/tolaria/actions/workflows/ci.yml) [![Build](https://github.com/refactoringhq/tolaria/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/refactoringhq/tolaria/actions/workflows/release.yml) [![Codecov](https://codecov.io/gh/refactoringhq/tolaria/graph/badge.svg?branch=main)](https://codecov.io/gh/refactoringhq/tolaria) [![CodeScene Hotspot Code Health](https://codescene.io/projects/76865/status-badges/hotspot-code-health)](https://codescene.io/projects/76865)
+![Latest stable](https://img.shields.io/github/v/release/refactoringhq/biblio?display_name=tag) [![CI](https://github.com/refactoringhq/biblio/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/refactoringhq/biblio/actions/workflows/ci.yml) [![Build](https://github.com/refactoringhq/biblio/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/refactoringhq/biblio/actions/workflows/release.yml) [![Codecov](https://codecov.io/gh/refactoringhq/biblio/graph/badge.svg?branch=main)](https://codecov.io/gh/refactoringhq/biblio) [![CodeScene Hotspot Code Health](https://codescene.io/projects/76865/status-badges/hotspot-code-health)](https://codescene.io/projects/76865)
 
-# 💧 Tolaria
+# 💧 Biblio
 
-Tolaria is a desktop app for Mac and Linux for managing **markdown knowledge bases**. People use it for a variety of use cases:
+Biblio is a desktop app for Mac and Linux for managing **markdown knowledge bases**. People use it for a variety of use cases:
 
 * Operate second brains and personal knowledge
 * Organize company docs as context for AI
@@ -15,31 +15,31 @@ Personally, I use it to **run my life** (hey 👋 [Luca here](http://x.com/lucar
 ## Walkthroughs
 
 You can find some Loom walkthroughs below — they are short and to the point:
-- [How I Organize My Own Tolaria Workspace](https://www.loom.com/share/bb3aaffa238b4be0bd62e4464bca2528)
+- [How I Organize My Own Biblio Workspace](https://www.loom.com/share/bb3aaffa238b4be0bd62e4464bca2528)
 - [My Inbox Workflow](https://www.loom.com/share/dffda263317b4fa8b47b59cdf9330571)
-- [How I Save Web Resources to Tolaria](https://www.loom.com/share/8a3c1776f801402ebbf4d7b0f31e9882)
+- [How I Save Web Resources to Biblio](https://www.loom.com/share/8a3c1776f801402ebbf4d7b0f31e9882)
 
 ## Principles
 
 - 📑 **Files-first** — Your notes are plain markdown files. They're portable, work with any editor, and require no export step. Your data belongs to you, not to any app.
-- 🔌 **Git-first** — Every vault is a git repository. You get full version history, the ability to use any git remote, and zero dependency on Tolaria servers.
-- 🛜 **Offline-first, zero lock-in** — No accounts, no subscriptions, no cloud dependencies. Your vault works completely offline and always will. If you stop using Tolaria, you lose nothing.
-- 🔬 **Open source** — Tolaria is free and open source. I built this for [myself](https://x.com/lucaronin) and for sharing it with others.
-- 📋 **Standards-based** — Notes are markdown files with YAML frontmatter. No proprietary formats, no locked-in data. Everything works with standard tools if you decide to move away from Tolaria.
-- 🔍 **Types as lenses, not schemas** — Types in Tolaria are navigation aids, not enforcement mechanisms. There's no required fields, no validation, just helpful categories for finding notes.
+- 🔌 **Git-first** — Every vault is a git repository. You get full version history, the ability to use any git remote, and zero dependency on Biblio servers.
+- 🛜 **Offline-first, zero lock-in** — No accounts, no subscriptions, no cloud dependencies. Your vault works completely offline and always will. If you stop using Biblio, you lose nothing.
+- 🔬 **Open source** — Biblio is free and open source. I built this for [myself](https://x.com/lucaronin) and for sharing it with others.
+- 📋 **Standards-based** — Notes are markdown files with YAML frontmatter. No proprietary formats, no locked-in data. Everything works with standard tools if you decide to move away from Biblio.
+- 🔍 **Types as lenses, not schemas** — Types in Biblio are navigation aids, not enforcement mechanisms. There's no required fields, no validation, just helpful categories for finding notes.
 - 🪄**AI-first but not AI-only** — A vault of files works very well with AI agents, but you are free to use whatever you want. We support Claude Code and Codex CLI (for now), but you can edit the vault with any AI you want. We provide an AGENTS file for your agents to figure out.
-- ⌨️ **Keyboard-first** — Tolaria is designed for power-users who want to use keyboard as much as possible. A lot of how we designed the Editor and the Command Palette is based on this.
-- 💪 **Built from real use** — Tolaria was created for manage my personal vault of 10,000+ notes, and I use it every day. Every feature exists because it solved a real problem.
+- ⌨️ **Keyboard-first** — Biblio is designed for power-users who want to use keyboard as much as possible. A lot of how we designed the Editor and the Command Palette is based on this.
+- 💪 **Built from real use** — Biblio was created for manage my personal vault of 10,000+ notes, and I use it every day. Every feature exists because it solved a real problem.
 
 ## Getting started
 
-Download the [latest release here](https://github.com/refactoringhq/tolaria/releases/latest/download/Tolaria.app.tar.gz).
+Download the [latest release here](https://github.com/refactoringhq/biblio/releases/latest/download/Biblio.app.tar.gz).
 
-When you open Tolaria for the first time you get the chance of cloning the [getting started vault](https://github.com/refactoringhq/tolaria-getting-started) — which gives you a walkthrough of the whole app.
+When you open Biblio for the first time you get the chance of cloning the [getting started vault](https://github.com/refactoringhq/biblio-getting-started) — which gives you a walkthrough of the whole app.
 
 ## Open source and local setup
 
-Tolaria is open source and built with Tauri, React, and TypeScript. If you want to run or contribute to the app locally, here is [how to get started](https://github.com/refactoringhq/tolaria/blob/main/docs/GETTING-STARTED.md). You can also find the gist below 👇
+Biblio is open source and built with Tauri, React, and TypeScript. If you want to run or contribute to the app locally, here is [how to get started](https://github.com/refactoringhq/biblio/blob/main/docs/GETTING-STARTED.md). You can also find the gist below 👇
 
 ### Prerequisites
 
@@ -97,4 +97,4 @@ If you believe you have found a security issue, please report it privately as de
 
 ## License
 
-Tolaria is licensed under AGPL-3.0-or-later. The Tolaria name and logo remain covered by the project’s trademark policy.
+Biblio is licensed under AGPL-3.0-or-later. The Biblio name and logo remain covered by the project’s trademark policy.

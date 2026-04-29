@@ -26,7 +26,7 @@ function isConnected(status: McpStatus): boolean {
 function actionCopy(status: McpStatus) {
   if (isConnected(status)) {
     return {
-      description: 'Tolaria is already connected to external AI tools for this vault. Reconnect to refresh the configuration, or disconnect to remove Tolaria from those third-party config files.',
+      description: 'Biblio is already connected to external AI tools for this vault. Reconnect to refresh the configuration, or disconnect to remove Biblio from those third-party config files.',
       primaryLabel: 'Reconnect External AI Tools',
       secondaryLabel: 'Disconnect',
       title: 'Manage External AI Tools',
@@ -34,7 +34,7 @@ function actionCopy(status: McpStatus) {
   }
 
   return {
-    description: 'Tolaria can add its MCP server to external AI tools for this vault, but it will not touch third-party config files until you confirm here.',
+    description: 'Biblio can add its MCP server to external AI tools for this vault, but it will not touch third-party config files until you confirm here.',
     primaryLabel: 'Connect External AI Tools',
     secondaryLabel: null,
     title: 'Set Up External AI Tools',
@@ -67,7 +67,7 @@ export function McpSetupDialog({
 
         <div className="space-y-3 text-sm leading-6 text-muted-foreground">
           <p>
-            Confirming this action will write or update Tolaria&apos;s single <code className="rounded bg-muted px-1 py-0.5 text-xs">tolaria</code> MCP entry in:
+            Confirming this action will write or update Biblio&apos;s single <code className="rounded bg-muted px-1 py-0.5 text-xs">biblio</code> MCP entry in:
           </p>
           <div className="rounded-md border border-border bg-muted/30 px-3 py-3 font-mono text-xs text-foreground">
             <div>~/.claude.json</div>
@@ -76,7 +76,7 @@ export function McpSetupDialog({
             <div>~/.config/mcp/mcp.json</div>
           </div>
           <p>
-            Claude Code CLI reads <code className="rounded bg-muted px-1 py-0.5 text-xs">~/.claude.json</code>, Cursor reads <code className="rounded bg-muted px-1 py-0.5 text-xs">~/.cursor/mcp.json</code>, and the generic <code className="rounded bg-muted px-1 py-0.5 text-xs">~/.config/mcp/mcp.json</code> path is picked up by other MCP-compatible tools. Cancel leaves all files untouched, reconnect is idempotent, and disconnect removes Tolaria&apos;s entry again.
+            Claude Code CLI reads <code className="rounded bg-muted px-1 py-0.5 text-xs">~/.claude.json</code>, Cursor reads <code className="rounded bg-muted px-1 py-0.5 text-xs">~/.cursor/mcp.json</code>, and the generic <code className="rounded bg-muted px-1 py-0.5 text-xs">~/.config/mcp/mcp.json</code> path is picked up by other MCP-compatible tools. Cancel leaves all files untouched, reconnect is idempotent, and disconnect removes Biblio&apos;s entry again.
           </p>
         </div>
 

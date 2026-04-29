@@ -5,7 +5,7 @@ import { NoteDropTarget } from './NoteDropTarget'
 import { clearDraggedNotePath } from './noteDragData'
 
 const NOTE_DRAG_MIME = 'application/x-laputa-note-path'
-const NOTE_PATH = '/vault/inbox/tolaria-social-media.md'
+const NOTE_PATH = '/vault/inbox/biblio-social-media.md'
 
 function createMockDataTransfer(options?: {
   readable?: boolean
@@ -60,7 +60,7 @@ describe('NoteDropTarget', () => {
     render(
       <>
         <DraggableNoteItem notePath={NOTE_PATH}>
-          <span>Drag Tolaria Social media</span>
+          <span>Drag Biblio Social media</span>
         </DraggableNoteItem>
         <NoteDropTarget canAcceptNotePath={canAcceptNotePath} onDropNote={onDropNote}>
           <span>CircleCI Series</span>

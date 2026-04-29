@@ -23,7 +23,7 @@ describe('feedbackDiagnostics', () => {
       releaseChannel: 'alpha',
     })
 
-    expect(bundle).toContain('Tolaria sanitized diagnostics')
+    expect(bundle).toContain('Biblio sanitized diagnostics')
     expect(bundle).toContain('Build: b281')
     expect(bundle).toContain('Release channel: alpha')
     expect(bundle).toContain('[error] Load failed for <redacted-path> with token <redacted-token>')

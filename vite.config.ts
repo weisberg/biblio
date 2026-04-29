@@ -86,7 +86,7 @@ function parseYamlBool(value: unknown): boolean | null {
 }
 
 const vitestCoverageDirectory = process.env.VITEST_COVERAGE_DIR
-  ?? path.join(os.tmpdir(), 'tolaria-vitest-coverage', String(process.pid))
+  ?? path.join(os.tmpdir(), 'biblio-vitest-coverage', String(process.pid))
 
 const devServerWatchIgnored = [
   '**/coverage/**',

@@ -348,7 +348,7 @@ describe('useVaultSwitcher', () => {
     })
 
     expect(onToast).toHaveBeenCalledWith(
-      'Tolaria needs a restart before macOS can open another folder picker. Restart to apply the downloaded update and try again.',
+      'Biblio needs a restart before macOS can open another folder picker. Restart to apply the downloaded update and try again.',
     )
   })
 

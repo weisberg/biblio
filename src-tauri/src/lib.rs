@@ -419,7 +419,7 @@ mod tests {
     #[test]
     fn linux_appimage_startup_env_overrides_disable_dmabuf_for_appimages() {
         let overrides = linux_appimage_startup_env_overrides_with(|key| match key {
-            "APPIMAGE" => Some("/tmp/Tolaria.AppImage".to_string()),
+            "APPIMAGE" => Some("/tmp/Biblio.AppImage".to_string()),
             _ => None,
         });
 
@@ -435,7 +435,7 @@ mod tests {
     #[test]
     fn linux_appimage_startup_env_overrides_preserve_explicit_user_setting() {
         let overrides = linux_appimage_startup_env_overrides_with(|key| match key {
-            "APPDIR" => Some("/tmp/.mount_Tolaria".to_string()),
+            "APPDIR" => Some("/tmp/.mount_Biblio".to_string()),
             "WEBKIT_DISABLE_DMABUF_RENDERER" => Some("0".to_string()),
             _ => None,
         });

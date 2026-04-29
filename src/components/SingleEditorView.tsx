@@ -32,12 +32,12 @@ import { WikilinkSuggestionMenu, type WikilinkSuggestionItem } from './WikilinkS
 import type { VaultEntry } from '../types'
 import { _wikilinkEntriesRef } from './editorSchema'
 import { useBlockNoteSideMenuHoverGuard } from './blockNoteSideMenuHoverGuard'
-import { getTolariaSlashMenuItems } from './tolariaEditorFormattingConfig'
+import { getBiblioSlashMenuItems } from './biblioEditorFormattingConfig'
 import {
-  TolariaFormattingToolbar,
-  TolariaFormattingToolbarController,
-} from './tolariaEditorFormatting'
-import { TolariaSideMenu } from './tolariaBlockNoteSideMenu'
+  BiblioFormattingToolbar,
+  BiblioFormattingToolbarController,
+} from './biblioEditorFormatting'
+import { BiblioSideMenu } from './biblioBlockNoteSideMenu'
 import { useEditorLinkActivation } from './useEditorLinkActivation'
 import { findNearestTextCursorBlock } from './blockNoteCursorTarget'
 
@@ -114,7 +114,7 @@ function handleToolbarMouseDownCapture(
   event.preventDefault()
 }
 
-function TolariaOpenLinkButton({ url }: Pick<LinkToolbarProps, 'url'>) {
+function BiblioOpenLinkButton({ url }: Pick<LinkToolbarProps, 'url'>) {
   const Components = useComponentsContext()!
   const dict = useDictionary()
   const handleOpen = useCallback(() => {
@@ -135,7 +135,7 @@ function TolariaOpenLinkButton({ url }: Pick<LinkToolbarProps, 'url'>) {
   )
 }
 
-function TolariaLinkToolbar(props: LinkToolbarProps) {
+function BiblioLinkToolbar(props: LinkToolbarProps) {
   return (
     <LinkToolbar {...props}>
       <EditLinkButton
@@ -145,7 +145,7 @@ function TolariaLinkToolbar(props: LinkToolbarProps) {
         setToolbarOpen={props.setToolbarOpen}
         setToolbarPositionFrozen={props.setToolbarPositionFrozen}
       />
-      <TolariaOpenLinkButton url={props.url} />
+      <BiblioOpenLinkButton url={props.url} />
       <DeleteLinkButton
         range={props.range}
         setToolbarOpen={props.setToolbarOpen}
@@ -393,7 +393,7 @@ function useSuggestionMenuItems(options: {
   ), [buildItems])
 
   const getSlashMenuItems = useCallback(async (query: string) => (
-    getTolariaSlashMenuItems(editor, query)
+    getBiblioSlashMenuItems(editor, query)
   ), [editor])
 
   return {
@@ -478,9 +478,9 @@ export function SingleEditorView({ editor, entries, onNavigateWikilink, onChange
         slashMenu={false}
         sideMenu={false}
       >
-        <SideMenuController sideMenu={TolariaSideMenu} />
-        <TolariaFormattingToolbarController
-          formattingToolbar={TolariaFormattingToolbar}
+        <SideMenuController sideMenu={BiblioSideMenu} />
+        <BiblioFormattingToolbarController
+          formattingToolbar={BiblioFormattingToolbar}
           floatingUIOptions={{
             elementProps: {
               onMouseDownCapture: handleToolbarMouseDownCapture,
@@ -488,7 +488,7 @@ export function SingleEditorView({ editor, entries, onNavigateWikilink, onChange
           }}
         />
         <LinkToolbarController
-          linkToolbar={TolariaLinkToolbar}
+          linkToolbar={BiblioLinkToolbar}
           floatingUIOptions={{
             elementProps: {
               onMouseDownCapture: handleToolbarMouseDownCapture,

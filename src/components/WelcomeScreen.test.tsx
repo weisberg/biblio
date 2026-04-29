@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { beforeEach, describe, it, expect, vi } from 'vitest'
 import { WelcomeScreen } from './WelcomeScreen'
-import tolariaIcon from '@/assets/tolaria-icon.svg'
+import biblioIcon from '@/assets/biblio-icon.svg'
 
 const dragRegionMouseDown = vi.fn()
 
@@ -30,15 +30,15 @@ describe('WelcomeScreen', () => {
   describe('welcome mode', () => {
     it('renders welcome title and subtitle', () => {
       render(<WelcomeScreen {...defaultProps} />)
-      expect(screen.getByText('Welcome to Tolaria')).toBeInTheDocument()
+      expect(screen.getByText('Welcome to Biblio')).toBeInTheDocument()
       expect(screen.getByText('Markdown knowledge management for the age of AI')).toBeInTheDocument()
     })
 
-    it('renders the local Tolaria branding icon', () => {
+    it('renders the local Biblio branding icon', () => {
       render(<WelcomeScreen {...defaultProps} />)
 
-      const brandIcon = screen.getByAltText('Tolaria icon')
-      expect(brandIcon).toHaveAttribute('src', tolariaIcon)
+      const brandIcon = screen.getByAltText('Biblio icon')
+      expect(brandIcon).toHaveAttribute('src', biblioIcon)
     })
 
     it('shows the onboarding actions in the guided-first order', () => {

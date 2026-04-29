@@ -19,11 +19,11 @@ import {
 } from '@/components/ui/dialog'
 import {
   REFACTORING_HOME_URL,
-  TOLARIA_GITHUB_CONTRIBUTING_URL,
-  TOLARIA_GITHUB_DISCUSSIONS_URL,
-  TOLARIA_GITHUB_ISSUES_URL,
-  TOLARIA_GITHUB_PULL_REQUESTS_URL,
-  TOLARIA_PRODUCT_BOARD_URL,
+  BIBLIO_GITHUB_CONTRIBUTING_URL,
+  BIBLIO_GITHUB_DISCUSSIONS_URL,
+  BIBLIO_GITHUB_ISSUES_URL,
+  BIBLIO_GITHUB_PULL_REQUESTS_URL,
+  BIBLIO_PRODUCT_BOARD_URL,
 } from '../constants/feedback'
 import {
   buildSanitizedDiagnosticBundle,
@@ -100,7 +100,7 @@ const CONTRIBUTION_BUTTON_CLASSES: Record<ContributionTone, string> = {
 
 const SPONSOR_SUPPORT_PATH: ContributionPath = {
   title: 'Sponsor / Support',
-  description: 'Luca here 👋 my full-time job is running Refactoring, a newsletter for 170K+ engineers about how to run good teams and ship software with AI. I write about workflows, interview tech leaders (e.g. DHH, Martin Fowler, and more) and run a private community of 2000+ engineers with monthly live coaching, AI club, and more.\n\nTolaria is FOSS and always will be. If you like it, the best way to support it is to subscribe to the newsletter.',
+  description: 'Luca here 👋 my full-time job is running Refactoring, a newsletter for 170K+ engineers about how to run good teams and ship software with AI. I write about workflows, interview tech leaders (e.g. DHH, Martin Fowler, and more) and run a private community of 2000+ engineers with monthly live coaching, AI club, and more.\n\nBiblio is FOSS and always will be. If you like it, the best way to support it is to subscribe to the newsletter.',
   ctaLabel: 'Check out Refactoring',
   label: 'Refactoring',
   url: REFACTORING_HOME_URL,
@@ -114,7 +114,7 @@ const CONTRIBUTION_PATHS: ContributionPath[] = [
     description: 'Search on the board first, upvote existing ideas, and create new posts when genuinely new!',
     ctaLabel: 'Open Product Board',
     label: 'Product Board',
-    url: TOLARIA_PRODUCT_BOARD_URL,
+    url: BIBLIO_PRODUCT_BOARD_URL,
     icon: Lightbulb,
     tone: 'green',
   },
@@ -123,7 +123,7 @@ const CONTRIBUTION_PATHS: ContributionPath[] = [
     description: 'Use Discussions for questions, conversations, show & tell, and community context.',
     ctaLabel: 'Open Discussions',
     label: 'GitHub Discussions',
-    url: TOLARIA_GITHUB_DISCUSSIONS_URL,
+    url: BIBLIO_GITHUB_DISCUSSIONS_URL,
     icon: MessagesSquare,
     tone: 'purple',
   },
@@ -132,13 +132,13 @@ const CONTRIBUTION_PATHS: ContributionPath[] = [
     description: 'Small, focused PRs are welcome. Check the board first so you build the right things!',
     ctaLabel: 'Open Pull Requests',
     label: 'GitHub Pull Requests',
-    url: TOLARIA_GITHUB_PULL_REQUESTS_URL,
+    url: BIBLIO_GITHUB_PULL_REQUESTS_URL,
     icon: GitPullRequest,
     tone: 'yellow',
     secondaryLink: {
       ctaLabel: 'Open Contributing Guide',
       label: 'the contributing guide',
-      url: TOLARIA_GITHUB_CONTRIBUTING_URL,
+      url: BIBLIO_GITHUB_CONTRIBUTING_URL,
     },
   },
 ]
@@ -390,7 +390,7 @@ function ContributionGrid({
         ctaLabel="Open GitHub Issues"
         icon={Bug}
         tone="red"
-        onAction={() => onOpenLink('GitHub Issues', TOLARIA_GITHUB_ISSUES_URL)}
+        onAction={() => onOpenLink('GitHub Issues', BIBLIO_GITHUB_ISSUES_URL)}
         secondaryAction={(
           <BugReportActions
             copyState={copyState}
@@ -438,7 +438,7 @@ export function FeedbackDialog({
         <DialogHeader className="space-y-2">
           <DialogTitle className="flex items-center gap-2">
             <Megaphone size={18} weight="duotone" />
-            Contribute to Tolaria
+            Contribute to Biblio
           </DialogTitle>
           <DialogDescription>
             Pick the path that fits what you want to do! Any type of help is appreciated

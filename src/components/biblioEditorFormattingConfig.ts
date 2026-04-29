@@ -20,8 +20,8 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 
-type TolariaSlashMenuItem = DefaultReactSuggestionItem & { key: string }
-type TolariaBlockTypeSelectItem = {
+type BiblioSlashMenuItem = DefaultReactSuggestionItem & { key: string }
+type BiblioBlockTypeSelectItem = {
   name: string
   type: string
   props?: Record<string, boolean | number | string>
@@ -43,7 +43,7 @@ const UNSUPPORTED_SLASH_MENU_KEYS = new Set([
   'toggle_list',
 ])
 
-const TOLARIA_BLOCK_TYPE_SELECT_ITEMS: TolariaBlockTypeSelectItem[] = [
+const BIBLIO_BLOCK_TYPE_SELECT_ITEMS: BiblioBlockTypeSelectItem[] = [
   { name: 'Paragraph', type: 'paragraph', icon: Pilcrow },
   { name: 'Heading 1', type: 'heading', props: { level: 1 }, icon: Heading1 },
   { name: 'Heading 2', type: 'heading', props: { level: 2 }, icon: Heading2 },
@@ -58,7 +58,7 @@ const TOLARIA_BLOCK_TYPE_SELECT_ITEMS: TolariaBlockTypeSelectItem[] = [
   { name: 'Code Block', type: 'codeBlock', icon: Code2 },
 ]
 
-const TOLARIA_SLASH_MENU_SUPPORT_SUBTEXT: Partial<Record<string, string>> = {
+const BIBLIO_SLASH_MENU_SUPPORT_SUBTEXT: Partial<Record<string, string>> = {
   heading: 'Markdown-safe heading (`#`). Persists after save and note switches.',
   heading_2: 'Markdown-safe heading (`##`). Persists after save and note switches.',
   heading_3: 'Markdown-safe heading (`###`). Persists after save and note switches.',
@@ -73,11 +73,11 @@ const TOLARIA_SLASH_MENU_SUPPORT_SUBTEXT: Partial<Record<string, string>> = {
   code_block: 'Markdown-safe fenced code block (```...```). Persists after save and note switches.',
 }
 
-export function getTolariaBlockTypeSelectItems() {
-  return TOLARIA_BLOCK_TYPE_SELECT_ITEMS
+export function getBiblioBlockTypeSelectItems() {
+  return BIBLIO_BLOCK_TYPE_SELECT_ITEMS
 }
 
-export function filterTolariaFormattingToolbarItems<T extends ReactElement>(
+export function filterBiblioFormattingToolbarItems<T extends ReactElement>(
   items: T[],
 ): T[] {
   return items.filter(
@@ -85,28 +85,28 @@ export function filterTolariaFormattingToolbarItems<T extends ReactElement>(
   )
 }
 
-export function filterTolariaSlashMenuItems<T extends TolariaSlashMenuItem>(
+export function filterBiblioSlashMenuItems<T extends BiblioSlashMenuItem>(
   items: T[],
 ): T[] {
   return items
     .filter((item) => !UNSUPPORTED_SLASH_MENU_KEYS.has(item.key))
     .map((item) => {
-      const tolariaSubtext = TOLARIA_SLASH_MENU_SUPPORT_SUBTEXT[item.key]
-      if (!tolariaSubtext) return item
+      const biblioSubtext = BIBLIO_SLASH_MENU_SUPPORT_SUBTEXT[item.key]
+      if (!biblioSubtext) return item
       return {
         ...item,
-        subtext: tolariaSubtext,
+        subtext: biblioSubtext,
       }
     }) as T[]
 }
 
-export function getTolariaSlashMenuItems(
+export function getBiblioSlashMenuItems(
   editor: Parameters<typeof getDefaultReactSlashMenuItems>[0],
   query: string,
 ) {
   return filterSuggestionItems(
-    filterTolariaSlashMenuItems(
-      getDefaultReactSlashMenuItems(editor) as TolariaSlashMenuItem[],
+    filterBiblioSlashMenuItems(
+      getDefaultReactSlashMenuItems(editor) as BiblioSlashMenuItem[],
     ),
     query,
   )

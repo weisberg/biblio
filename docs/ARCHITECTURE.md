@@ -1,6 +1,6 @@
 # Architecture
 
-Tolaria is a personal knowledge and life management desktop app. It reads a vault of markdown files with YAML frontmatter and presents them in a four-panel UI inspired by Bear Notes.
+Biblio is a personal knowledge and life management desktop app. It reads a vault of markdown files with YAML frontmatter and presents them in a four-panel UI inspired by Bear Notes.
 
 ## Design Principles
 
@@ -10,13 +10,13 @@ The vault is a folder of plain markdown files. The app never owns the data — i
 
 ### Convention over configuration
 
-Tolaria is opinionated. Standard field names (`type:`, `status:`, `url:`, `Workspace:`, `belongs_to:`, `related_to:`, `has:`, `start_date:`, `end_date:`) have well-defined meanings and trigger specific UI behavior — without any setup. Relationship defaults are stored in snake_case on disk and humanized in the UI. This is not convention *instead of* configuration: users can override defaults via config files in their vault (e.g. `config/relations.md`, `config/semantic-properties.md`). But the defaults work out of the box, and most users never need to touch them.
+Biblio is opinionated. Standard field names (`type:`, `status:`, `url:`, `Workspace:`, `belongs_to:`, `related_to:`, `has:`, `start_date:`, `end_date:`) have well-defined meanings and trigger specific UI behavior — without any setup. Relationship defaults are stored in snake_case on disk and humanized in the UI. This is not convention *instead of* configuration: users can override defaults via config files in their vault (e.g. `config/relations.md`, `config/semantic-properties.md`). But the defaults work out of the box, and most users never need to touch them.
 
 This principle directly serves AI-readability: the more structure comes from shared conventions rather than per-user custom configurations, the easier it is for an AI agent to understand and navigate the vault correctly — without needing bespoke instructions for every setup.
 
 ### Where to store state: vault vs. app settings
 
-When deciding where to persist a piece of data, ask: **"Would the user want this to follow them across all their Tolaria installations — other devices, future platforms (tablet, web)?"**
+When deciding where to persist a piece of data, ask: **"Would the user want this to follow them across all their Biblio installations — other devices, future platforms (tablet, web)?"**
 
 | Follows the vault | Stays with the installation |
 |-------------------|-----------------------------|
@@ -26,7 +26,7 @@ When deciding where to persist a piece of data, ask: **"Would the user want this
 | Property display order | Window size / position |
 | Any user-visible customization of how content is organized or displayed | Any machine-specific or credential-type setting |
 
-**Rule:** If the information is about *how the content is structured or presented* and the user would expect it to be consistent wherever they open their vault, store it in the vault (frontmatter of the relevant note, using the `_field` underscore convention for system properties). If it's about *this specific installation of the app*, store it in `~/.config/com.tolaria.app/settings.json` or localStorage.
+**Rule:** If the information is about *how the content is structured or presented* and the user would expect it to be consistent wherever they open their vault, store it in the vault (frontmatter of the relevant note, using the `_field` underscore convention for system properties). If it's about *this specific installation of the app*, store it in `~/.config/com.biblio.app/settings.json` or localStorage.
 
 Examples:
 - ✅ Vault: `_pinned_properties` in a Type note (every device should show the same pinned properties)
@@ -188,7 +188,7 @@ Panels are separated by `ResizeHandle` components that support drag-to-resize.
 The main Tauri window derives its minimum width from the visible panes instead of a single fixed floor. `useMainWindowSizeConstraints` treats the editor-only shell as the 480px baseline, adds sidebar / note-list / expanded-inspector allowances on top, and calls the native `update_current_window_min_size` command whenever view mode or inspector visibility changes. That same native command also grows the current window back out when a wider pane combination is restored, while note windows skip this path and keep their dedicated 800×700 initial sizing.
 
 Linux uses custom React-rendered window chrome instead of the native Tauri menu bar. `setup_linux_window_chrome()` drops server-side decorations on the main window, `openNoteInNewWindow()` does the same for detached note windows, and `LinuxTitlebar`/`LinuxMenuButton` route both window controls and menu actions back through the same shared command pipeline that macOS uses for native menu clicks.
-When Tolaria is launched from a Linux AppImage, `run()` also injects `WEBKIT_DISABLE_DMABUF_RENDERER=1` unless the user already set that variable. This keeps the workaround scoped to bundled WebKitGTK launches that are prone to Fedora/Wayland DMA-BUF crashes without changing native package installs.
+When Biblio is launched from a Linux AppImage, `run()` also injects `WEBKIT_DISABLE_DMABUF_RENDERER=1` unless the user already set that variable. This keeps the workaround scoped to bundled WebKitGTK launches that are prone to Fedora/Wayland DMA-BUF crashes without changing native package installs.
 
 ## Multi-Window (Note Windows)
 
@@ -217,7 +217,7 @@ Full agent mode — spawns the selected local CLI agent as a subprocess with too
 1. **Frontend** (`AiPanel` + `useCliAiAgent` + `aiAgents.ts`) — streaming UI with reasoning blocks, tool action cards, response display, onboarding, and default-agent selection
 2. **Backend** (`ai_agents.rs`) — normalizes agent availability and streaming, dispatching to per-agent adapters
 3. **Agent adapters** — Claude Code still uses `claude_cli.rs`; Codex runs through `codex exec --json` with the CLI's normal approval / sandbox defaults
-4. **MCP Integration** — Claude receives the generated MCP config file path, while Codex receives the same Tolaria MCP server via transient `-c mcp_servers.tolaria.*` config overrides
+4. **MCP Integration** — Claude receives the generated MCP config file path, while Codex receives the same Biblio MCP server via transient `-c mcp_servers.biblio.*` config overrides
 
 CLI-agent availability intentionally does not depend only on the desktop app's inherited `PATH`. The detectors check the current process path, the user's login shell, and supported local/toolchain install locations such as native `~/.local/bin`, local `~/.claude/local`, Mise/asdf shims, npm-global, Homebrew, Windows `%APPDATA%\npm`/pnpm/Scoop shims, Windows `.exe` launchers, and the macOS Codex app resource path so first-run onboarding works on fresh macOS and Windows installs.
 
@@ -280,7 +280,7 @@ Token budget: 60% of 180k context limit (~108k tokens max). Active note gets pri
 
 ### Authentication
 
-Each CLI agent authenticates itself outside Tolaria. Claude Code uses its existing CLI login; Codex surfaces a friendly prompt to run `codex login` when needed. Tolaria does not store model-provider API keys in app settings.
+Each CLI agent authenticates itself outside Biblio. Claude Code uses its existing CLI login; Codex surfaces a friendly prompt to run `codex login` when needed. Biblio does not store model-provider API keys in app settings.
 
 ## MCP Server
 
@@ -300,7 +300,7 @@ The MCP server (`mcp-server/`) exposes vault operations as tools for AI assistan
 | `link_notes` | `source_path, property, target_title` | Add a target to an array property in frontmatter |
 | `list_notes` | `[type_filter], [sort]` | List all notes, optionally filtered by type |
 | `vault_context` | — | Get vault summary: entity types + 20 recent notes + configFiles |
-| `ui_open_note` | `path` | Open a note in the Tolaria UI editor |
+| `ui_open_note` | `path` | Open a note in the Biblio UI editor |
 | `ui_open_tab` | `path` | Open a note in a new UI tab |
 | `ui_highlight` | `element, [path]` | Highlight a UI element (editor, tab, properties, notelist) |
 | `ui_set_filter` | `type` | Set the sidebar filter to a specific type |
@@ -308,18 +308,18 @@ The MCP server (`mcp-server/`) exposes vault operations as tools for AI assistan
 ### Transports
 
 - **stdio** — standard MCP transport for Claude Code / Cursor (`node mcp-server/index.js`)
-- **WebSocket** — live bridge for Tolaria app integration:
+- **WebSocket** — live bridge for Biblio app integration:
   - Port **9710**: Tool bridge — AI/Claude clients call vault tools here
   - Port **9711**: UI bridge — Frontend listens for UI action broadcasts from MCP tools
 
 ### Explicit External Tool Setup
 
-Tolaria can register itself as an MCP server in:
+Biblio can register itself as an MCP server in:
 - `~/.claude.json` and `~/.claude/mcp.json` (Claude Code compatibility across current CLI and legacy MCP-file setups)
 - `~/.cursor/mcp.json` (Cursor)
 - `~/.config/mcp/mcp.json` (generic MCP-compatible clients)
 
-That setup is user-initiated through the status bar / command palette flow, not a startup side effect. Registration is non-destructive (additive, preserves other servers), uses `upsert` semantics, and can be reversed by removing Tolaria's entry again. The `useMcpStatus` hook tracks whether the active vault is explicitly connected (`checking | installed | not_installed`).
+That setup is user-initiated through the status bar / command palette flow, not a startup side effect. Registration is non-destructive (additive, preserves other servers), uses `upsert` semantics, and can be reversed by removing Biblio's entry again. The `useMcpStatus` hook tracks whether the active vault is explicitly connected (`checking | installed | not_installed`).
 
 ### Architecture
 
@@ -365,8 +365,8 @@ flowchart LR
 | Function | Purpose |
 |----------|---------|
 | `spawn_ws_bridge(vault_path)` | Spawns `ws-bridge.js` as child process with VAULT_PATH env |
-| `register_mcp(vault_path)` | Writes Tolaria entry to Claude Code, Cursor, and generic MCP configs on explicit user request |
-| `remove_mcp()` | Removes Tolaria's MCP entry from Claude Code, Cursor, and generic MCP configs |
+| `register_mcp(vault_path)` | Writes Biblio entry to Claude Code, Cursor, and generic MCP configs on explicit user request |
+| `remove_mcp()` | Removes Biblio's MCP entry from Claude Code, Cursor, and generic MCP configs |
 | `upsert_mcp_config(path, entry)` | Atomic config file update (create/merge, preserves others) |
 
 The `WsBridgeChild` state wrapper in `lib.rs` ensures the bridge process is killed on app exit via `RunEvent::Exit` handler. The same desktop layer now keeps the Tauri asset protocol scoped to the active vault instead of every filesystem path.
@@ -388,9 +388,9 @@ The vault cache (`src-tauri/src/vault/cache.rs`) accelerates vault scanning usin
 
 ### Cache File
 
-`~/.laputa/cache/<vault-hash>.json` — stored outside the vault directory so it never pollutes the user's git repo. The vault path is hashed (via `DefaultHasher`) to produce a deterministic filename. Stores: vault path, git HEAD commit hash, all VaultEntry objects. Version: v13 (bumped on VaultEntry field changes to force full rescan). Cache replacement is best-effort: Tolaria writes a temp file, fsyncs it, and renames it into place only after a short-lived writer lock plus an on-disk fingerprint check confirm another window/process has not already refreshed the cache. Failures are logged and the app falls back to rebuilding from the filesystem.
+`~/.laputa/cache/<vault-hash>.json` — stored outside the vault directory so it never pollutes the user's git repo. The vault path is hashed (via `DefaultHasher`) to produce a deterministic filename. Stores: vault path, git HEAD commit hash, all VaultEntry objects. Version: v13 (bumped on VaultEntry field changes to force full rescan). Cache replacement is best-effort: Biblio writes a temp file, fsyncs it, and renames it into place only after a short-lived writer lock plus an on-disk fingerprint check confirm another window/process has not already refreshed the cache. Failures are logged and the app falls back to rebuilding from the filesystem.
 
-`<vault>/.tolaria-rename-txn/` — hidden, scan-ignored staging directory for crash-safe note renames. Tolaria stores temporary backup files plus one manifest per in-flight rename here. On the next vault scan, unfinished transactions are recovered before entries are listed so users do not see a missing note or a visible duplicate after a crash.
+`<vault>/.biblio-rename-txn/` — hidden, scan-ignored staging directory for crash-safe note renames. Biblio stores temporary backup files plus one manifest per in-flight rename here. On the next vault scan, unfinished transactions are recovered before entries are listed so users do not see a missing note or a visible duplicate after a crash.
 
 ### Three Cache Strategies
 
@@ -418,7 +418,7 @@ The app uses internal app-owned light and dark themes (see [ADR-0081](adr/0081-i
 
 ## Localization
 
-Tolaria's app chrome uses an app-owned localization layer in `src/lib/i18n.ts` (see [ADR-0084](adr/0084-app-localization-foundation.md)). English is the canonical fallback, and Simplified Chinese (`zh-Hans`) is the first additional locale. The installation-local `ui_language` setting stores an explicit locale when the user chooses one; `null` means "follow the system language when Tolaria supports it, otherwise English." Missing translation keys fall back to English so partially translated locales do not render broken placeholders.
+Biblio's app chrome uses an app-owned localization layer in `src/lib/i18n.ts` (see [ADR-0084](adr/0084-app-localization-foundation.md)). English is the canonical fallback, and Simplified Chinese (`zh-Hans`) is the first additional locale. The installation-local `ui_language` setting stores an explicit locale when the user chooses one; `null` means "follow the system language when Biblio supports it, otherwise English." Missing translation keys fall back to English so partially translated locales do not render broken placeholders.
 
 `App.tsx` derives the effective locale from settings and browser/system language hints, then passes it down to localized surfaces. Settings exposes a keyboard-accessible shadcn `Select`, and the command palette includes actions to open language settings or switch directly to a supported language.
 
@@ -426,7 +426,7 @@ Tolaria's app chrome uses an app-owned localization layer in `src/lib/i18n.ts` (
 
 ### Vault List
 
-Persisted at `~/.config/com.tolaria.app/vaults.json` (reads legacy `com.laputa.app` on upgrade):
+Persisted at `~/.config/com.biblio.app/vaults.json` (reads legacy `com.laputa.app` on upgrade):
 ```json
 {
   "vaults": [{ "label": "My Vault", "path": "/path/to/vault" }],
@@ -457,19 +457,19 @@ On first launch, `useOnboarding` checks if the default vault exists. If not, it 
 - **Open an existing folder** → system file picker
 - **Get started with a template** → pick a parent folder, then call `create_getting_started_vault()` with the derived `.../Getting Started` child path so the cloned vault opens into the populated repo root immediately
 
-When an opened folder is not yet a git repo, `init_git_repo` runs `git init`, ensures Tolaria's default `.gitignore`, stages the vault, and writes the initial `Initial vault setup` commit. That app-managed setup commit explicitly disables commit signing for the single command so inherited global or local `commit.gpgsign` preferences cannot strand onboarding when GPG is missing or misconfigured. Later `git_commit` calls honor the user's signing configuration first, then retry the same app-managed commit once with `commit.gpgsign=false` only when Git reports a signing-helper failure, so working GPG/SSH signing setups continue to sign while broken GPG setups do not create repeated opaque commit failures.
+When an opened folder is not yet a git repo, `init_git_repo` runs `git init`, ensures Biblio's default `.gitignore`, stages the vault, and writes the initial `Initial vault setup` commit. That app-managed setup commit explicitly disables commit signing for the single command so inherited global or local `commit.gpgsign` preferences cannot strand onboarding when GPG is missing or misconfigured. Later `git_commit` calls honor the user's signing configuration first, then retry the same app-managed commit once with `commit.gpgsign=false` only when Git reports a signing-helper failure, so working GPG/SSH signing setups continue to sign while broken GPG setups do not create repeated opaque commit failures.
 
 Once a vault is ready, `useAiAgentsOnboarding` can show a one-time `AiAgentsOnboardingPrompt`. That prompt reads `useAiAgentsStatus` so first launch surfaces whether Claude Code and Codex are installed, offers per-agent install links when they are missing, and stores local dismissal so the prompt does not repeat on every launch.
 
 `useGettingStartedClone` reuses the same parent-folder semantics for the status-bar / command-palette clone action, and `Toast` is rendered through the AI-agents onboarding gate so the resolved destination path stays visible right after a successful clone.
 
-The starter content no longer lives in the app repo. `src-tauri/src/vault/getting_started.rs` holds the public starter repo URL (`refactoringhq/tolaria-getting-started`), delegates the clone to the git backend, then normalizes Tolaria-managed root guidance and type scaffolding (`AGENTS.md`, `CLAUDE.md`, `type.md`, `note.md`) so fresh starter vaults pick up the current defaults even when the remote starter repo still carries a legacy copy or an older pre-`type:` `is_a`-era template. `AGENTS.md` stays the canonical vault guidance file; `CLAUDE.md` is a compatibility shim that imports it for Claude Code without duplicating the instructions, and Tolaria seeds it as an organized `Note` so it stays out of the way in a fresh vault. The clone helper still accepts the legacy `LAPUTA_GETTING_STARTED_REPO_URL` environment override so older automation can continue to redirect the starter source during the transition.
+The starter content no longer lives in the app repo. `src-tauri/src/vault/getting_started.rs` holds the public starter repo URL (`refactoringhq/biblio-getting-started`), delegates the clone to the git backend, then normalizes Biblio-managed root guidance and type scaffolding (`AGENTS.md`, `CLAUDE.md`, `type.md`, `note.md`) so fresh starter vaults pick up the current defaults even when the remote starter repo still carries a legacy copy or an older pre-`type:` `is_a`-era template. `AGENTS.md` stays the canonical vault guidance file; `CLAUDE.md` is a compatibility shim that imports it for Claude Code without duplicating the instructions, and Biblio seeds it as an organized `Note` so it stays out of the way in a fresh vault. The clone helper still accepts the legacy `LAPUTA_GETTING_STARTED_REPO_URL` environment override so older automation can continue to redirect the starter source during the transition.
 
-After the clone completes, Tolaria removes every configured git remote from the new starter vault. Getting Started vaults therefore open as local-only by default, and users opt into a remote later with the explicit Add Remote flow.
+After the clone completes, Biblio removes every configured git remote from the new starter vault. Getting Started vaults therefore open as local-only by default, and users opt into a remote later with the explicit Add Remote flow.
 
 ### Remote Clone & Auth Model
 
-Tolaria no longer implements provider-specific OAuth or remote-repository APIs. All remote git work goes through the user's existing system git configuration.
+Biblio no longer implements provider-specific OAuth or remote-repository APIs. All remote git work goes through the user's existing system git configuration.
 
 **Flow:**
 1. User opens `CloneVaultModal` from onboarding or the vault menu
@@ -480,7 +480,7 @@ Tolaria no longer implements provider-specific OAuth or remote-repository APIs. 
 
 **Auth model:**
 - SSH keys, Git Credential Manager, macOS Keychain helpers, `gh auth`, and other git helpers all work without app-specific setup
-- No provider tokens are stored in Tolaria settings
+- No provider tokens are stored in Biblio settings
 - The same flow works for GitHub, GitLab, Bitbucket, Gitea, and self-hosted remotes
 
 ## Pulse View
@@ -579,7 +579,7 @@ flowchart TD
     STATUS["Click sync badge"] --> POPUP["GitStatusPopup\n(branch, ahead/behind)"]
 ```
 
-`useGitRemoteStatus` re-checks `git_remote_status` when the commit dialog opens and again right before submit. If `hasRemote` is false, Tolaria keeps the flow local-only: the status bar shows a neutral `No remote` chip, the dialog copy switches from "Commit & Push" to "Commit", and no `git_push` call is attempted.
+`useGitRemoteStatus` re-checks `git_remote_status` when the commit dialog opens and again right before submit. If `hasRemote` is false, Biblio keeps the flow local-only: the status bar shows a neutral `No remote` chip, the dialog copy switches from "Commit & Push" to "Commit", and no `git_push` call is attempted.
 
 The same local-only state enables the explicit Add Remote flow. `AddRemoteModal` is reachable from the `No remote` chip and the command palette. The backend `git_add_remote` command adds `origin`, fetches it, refuses incompatible histories, and only enables tracking after a safe push or fast-forward-compatible check succeeds.
 
@@ -651,9 +651,9 @@ The vault backend (`src-tauri/src/vault/`) is split into focused submodules:
 | `reload_vault_entry` | Re-read a single file from disk → `VaultEntry` |
 | `check_vault_exists` | Check if vault path exists |
 | `create_empty_vault` | Create a git-backed vault, then seed root `AGENTS.md`, `CLAUDE.md`, `type.md`, and `note.md` defaults |
-| `create_getting_started_vault` | Clone the public Getting Started vault, refresh Tolaria-managed guidance/config defaults, and keep the cloned repo clean |
+| `create_getting_started_vault` | Clone the public Getting Started vault, refresh Biblio-managed guidance/config defaults, and keep the cloned repo clean |
 | `get_vault_ai_guidance_status` | Report whether `AGENTS.md` and the `CLAUDE.md` shim are managed, missing, broken, or custom |
-| `restore_vault_ai_guidance` | Restore any missing/broken Tolaria-managed guidance files without overwriting custom ones |
+| `restore_vault_ai_guidance` | Restore any missing/broken Biblio-managed guidance files without overwriting custom ones |
 
 ### Frontmatter
 
@@ -708,7 +708,7 @@ The vault backend (`src-tauri/src/vault/`) is split into focused submodules:
 | `get_ai_agents_status` | Check Claude Code + Codex availability |
 | `stream_ai_agent` | Stream the selected CLI agent through the normalized event layer |
 | `register_mcp_tools` | Register MCP in Claude/Cursor/generic config for the active vault |
-| `remove_mcp_tools` | Remove Tolaria's MCP entry from Claude/Cursor/generic config |
+| `remove_mcp_tools` | Remove Biblio's MCP entry from Claude/Cursor/generic config |
 | `check_mcp_status` | Check whether the active vault is explicitly registered in Claude/Cursor/generic config |
 
 The desktop MCP WebSocket bridge is intentionally local-only. `mcp-server/ws-bridge.js` binds both bridge ports to loopback, rejects non-loopback clients, accepts browser/Tauri origins only on the UI bridge, and rejects browser-origin requests on the tool bridge so remote pages cannot drive vault tools directly.
@@ -827,7 +827,7 @@ push to main
       → upload NSIS installer, optional MSI artifacts, and signed Windows updater bundles
   → release job:
       → generate alpha-latest.json with darwin-aarch64, darwin-x86_64, Linux, and Windows updater URLs
-      → publish GitHub prerelease alpha-vYYYY.M.D-alpha.NNNN named Tolaria Alpha YYYY.M.D.N
+      → publish GitHub prerelease alpha-vYYYY.M.D-alpha.NNNN named Biblio Alpha YYYY.M.D.N
   → pages job:
       → build static HTML release history page
       → publish alpha/latest.json
@@ -853,7 +853,7 @@ push stable-vYYYY.M.D tag
       → upload NSIS installer, optional MSI artifacts, and signed Windows updater bundles
   → release job:
       → generate stable-latest.json with macOS Apple Silicon, macOS Intel, Linux, and Windows updater URLs plus platform-specific manual download URLs
-      → publish GitHub release Tolaria YYYY.M.D
+      → publish GitHub release Biblio YYYY.M.D
   → pages job:
       → publish stable/latest.json
       → publish stable/download/ and download/ as permanent redirect URLs for the latest stable platform installer
@@ -924,7 +924,7 @@ sequenceDiagram
 
 ### Updates
 
-Tolaria uses the Tauri updater plugin for automatic updates:
+Biblio uses the Tauri updater plugin for automatic updates:
 
 - `src-tauri/tauri.conf.json` points the default desktop feed at `stable/latest.json`
 - `useUpdater(releaseChannel)` waits 3 seconds after launch, then calls Rust commands instead of hard-coding one updater endpoint in the frontend

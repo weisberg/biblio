@@ -53,7 +53,7 @@ function restoreGuidanceCommands({
   return [
     {
       id: 'restore-vault-ai-guidance',
-      label: 'Restore Tolaria AI Guidance',
+      label: 'Restore Biblio AI Guidance',
       group: 'Settings',
       keywords: ['ai', 'agent', 'guidance', 'restore', 'repair', 'claude', 'codex', 'agents'],
       enabled: true,

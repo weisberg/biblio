@@ -46,7 +46,7 @@ describe('AiAgentsBadge', () => {
       fireEvent.keyDown(trigger, { key: 'ArrowDown' })
     })
 
-    expect(screen.getByTestId('status-ai-guidance-summary')).toHaveTextContent('Tolaria guidance missing or broken')
+    expect(screen.getByTestId('status-ai-guidance-summary')).toHaveTextContent('Biblio guidance missing or broken')
     act(() => {
       fireEvent.click(screen.getByTestId('status-ai-guidance-restore'))
     })
